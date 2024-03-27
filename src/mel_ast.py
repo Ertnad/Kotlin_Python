@@ -53,7 +53,7 @@ class IdentNode(ExprNode):
         super().__init__()
         self.name = str(name)
 
-    def __str__(self)->str:
+    def __str__(self) -> str:
         return str(self.name)
 
 
@@ -71,11 +71,41 @@ class CallNode(ExprNode):
         return 'call'
 
 
+class UnOp(Enum):
+    NOT = '!'
+
+
 class BinOp(Enum):
     ADD = '+'
     SUB = '-'
     MUL = '*'
     DIV = '/'
+    GE = '>='
+    LE = '<='
+    GT = '>'
+    LT = '<'
+    EQUALS = '=='
+    NOTEQUALS = '!='
+    LOGIC_AND = '&&'
+    LOGIC_OR = '||'
+
+
+class Op(Enum):
+    IN = 'in'
+
+
+class UnOpNode(ExprNode):
+    def __init__(self, op: UnOp, arg1: ExprNode):
+        super().__init__()
+        self.op = op
+        self.arg1 = arg1
+
+    @property
+    def childs(self) -> Tuple[ExprNode]:
+        return self.arg1,
+
+    def __str__(self) -> str:
+        return str(self.op.value)
 
 
 class BinOpNode(ExprNode):
@@ -89,32 +119,8 @@ class BinOpNode(ExprNode):
     def childs(self) -> Tuple[ExprNode, ExprNode]:
         return self.arg1, self.arg2
 
-    def __str__(self)->str:
+    def __str__(self) -> str:
         return str(self.op.value)
-
-
-class InputNode(AstNode):
-    def __init__(self, var: IdentNode):
-        self.var = var
-
-    @property
-    def childs(self) -> Tuple[IdentNode]:
-        return self.var,
-
-    def __str__(self)->str:
-        return 'input'
-
-
-class OutputNode(AstNode):
-    def __init__(self, arg: ExprNode):
-        self.arg = arg
-
-    @property
-    def childs(self) -> Tuple[ExprNode]:
-        return self.arg,
-
-    def __str__(self)->str:
-        return 'output'
 
 
 class StmtNode(AstNode):
@@ -131,7 +137,7 @@ class AssignNode(StmtNode):
     def childs(self) -> Tuple[IdentNode, ExprNode]:
         return self.var, self.val
 
-    def __str__(self)->str:
+    def __str__(self) -> str:
         return '='
 
 
@@ -151,18 +157,62 @@ class IfNode(StmtNode):
 
 
 class ForNode(StmtNode):
-    def __init__(self, init: StmtNode, cond: ExprNode, step: StmtNode, body: StmtNode):
+    def __init__(self, assign: Optional[ExprNode], cond: Optional[ExprNode], step: Optional[StmtNode],
+                 body: Optional[StmtNode]):
         super().__init__()
+        self.assign = assign
         self.cond = cond
         self.step = step
         self.body = body
 
     @property
-    def childs(self) -> Tuple[ExprNode, StmtNode, Optional[StmtNode]]:
-        return (self.cond, self.then_stmt) + ((self.else_stmt,) if self.else_stmt else tuple())
+    def childs(self) -> Tuple[Optional[StmtNode], Optional[ExprNode], Optional[StmtNode], Optional[StmtNode]]:
+        return self.assign, self.cond, self.step, self.body
 
     def __str__(self) -> str:
         return 'for'
+
+
+class InNode(ExprNode):
+    def __init__(self, arg1: NumNode, arg2: NumNode):
+        super().__init__()
+        self.arg1 = arg1
+        self.arg2 = arg2
+
+    @property
+    def childs(self) -> Tuple[NumNode, NumNode]:
+        return self.arg1, self.arg2
+
+    def __str__(self) -> str:
+        return 'in'
+
+
+class WhenExprNode(StmtNode):
+    def __init__(self, cond: ExprNode, then_stmt: StmtNode):
+        super().__init__()
+        self.cond = cond
+        self.then_stmt = then_stmt
+
+    @property
+    def childs(self) -> Tuple[ExprNode, StmtNode]:
+        return self.cond if self.cond else tuple(), self.then_stmt
+
+    def __str__(self) -> str:
+        return '->'
+
+
+class WhenNode(StmtNode):
+    def __init__(self, cond: ExprNode, *when_expr: WhenExprNode):
+        super().__init__()
+        self.cond = cond
+        self.when_expr = when_expr
+
+    @property
+    def childs(self) -> tuple[ExprNode, WhenExprNode]:
+        return self.cond, *self.when_expr
+
+    def __str__(self) -> str:
+        return 'when'
 
 
 class StmtListNode(AstNode):
@@ -174,5 +224,5 @@ class StmtListNode(AstNode):
     def childs(self) -> Tuple[AstNode]:
         return self.exprs
 
-    def __str__(self)->str:
+    def __str__(self) -> str:
         return '...'
