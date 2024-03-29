@@ -72,7 +72,6 @@ def main():
             a = 5 && 6
             a = 5 || 6
             a = !!a
-            in 10..11
         """
     prog10 = """
         when(a + b){
@@ -105,7 +104,7 @@ def main():
         }
     """
     prog14 = """
-        c = if (a > b) a else b
+        c = if (a > b) a else if (a == b) b else d
     """
     prog = mel_parser.parse(prog14)
     print(*prog.tree, sep=os.linesep)
