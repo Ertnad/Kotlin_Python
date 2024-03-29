@@ -63,11 +63,12 @@ def _make_parser():
     empty_expr = pp.Group(pp.empty).setParseAction(lambda s, loc, tocs: NumNode(1))
     expr_or_empty = expr | empty_expr
 
+    if_ = pp.Forward()
     when = pp.Forward()
-    assign = ident + ASSIGN.suppress() + (expr | when)
+    assign = ident + ASSIGN.suppress() + (expr | if_ | when)
 
-    if_ = (IF + LPAR + expr + RPAR + stmt + pp.Optional(ELSE + stmt)) |\
-          (IF + LPAR + expr + RPAR + (ident | expr) + ELSE + (ident | expr))
+    if_ << ((IF + LPAR + expr + RPAR + stmt + pp.Optional(ELSE + stmt))
+            | (IF + LPAR + expr + RPAR + (ident | expr) + ELSE + (ident | expr)))
 
     for_ = FOR + LPAR + stmt_or_empty + SEMI + expr_or_empty + SEMI + stmt_or_empty + RPAR + stmt
 
