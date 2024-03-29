@@ -37,7 +37,7 @@ def _make_parser():
 
     int_num = ppc.number.copy().setName("int_num")
     num = ppc.fnumber.copy().setName('num')
-    ident = ~keywords + ppc.identifier  # ~ переопределён для парсера и означает не keywords
+    ident = (~keywords + ppc.identifier.copy()).setName('ident')  # ~ переопределён для парсера и означает не keywords
     type_ = ident.copy().setName('type')
 
     in_ = pp.Forward()
@@ -63,6 +63,13 @@ def _make_parser():
     empty_expr = pp.Group(pp.empty).setParseAction(lambda s, loc, tocs: NumNode(1))
     expr_or_empty = expr | empty_expr
 
+    def var_inner_parse_action(s, loc, tocs):
+        const = str(tocs[0]) == 'val'
+        return VarDecl(const, tocs[1], tocs[2], tocs[3]) if len(tocs) == 4 else VarDecl(const, tocs[1], tocs[2], None)
+
+    var_inner = ((VAR | VAL) + ident + COLON.suppress() + ident + pp.Optional(ASSIGN.suppress() + expr)).setParseAction(
+        var_inner_parse_action)
+
     if_ = pp.Forward()
     when = pp.Forward()
     assign = ident + ASSIGN.suppress() + (expr | if_ | when)
@@ -76,7 +83,7 @@ def _make_parser():
 
     when_expr = (expr | in_) + OPERATOR + (expr | stmt)
     when << (WHEN + pp.Optional(LPAR + expr + RPAR) + LBRACE + pp.OneOrMore(when_expr)
-            + pp.Optional(ELSE + OPERATOR + (expr | stmt)) + RBRACE)
+             + pp.Optional(ELSE + OPERATOR + (expr | stmt)) + RBRACE)
 
     stmt_list = pp.Forward()  # объявляем
 
@@ -86,6 +93,7 @@ def _make_parser():
             if_ |
             for_ |
             when |
+            var_inner |
             LBRACE + stmt_list + RBRACE
     )
     stmt_list << pp.ZeroOrMore(stmt + pp.ZeroOrMore(SEMI))  # переопределяем
@@ -104,10 +112,12 @@ def _make_parser():
                 for i in range(1, len(tocs) - 1, 2):
                     node = BinOpNode(BinOp(tocs[i]), node, tocs[i + 1])
                 return node
+
             parser.setParseAction(bin_op_parse_action)
         elif rule_name == 'unary':
             def un_op_parse_action(s, loc, tocs):
                 return UnOpNode(UnOp(tocs[0]), tocs[1])
+
             parser.setParseAction(un_op_parse_action)
         else:
             cls = ''.join(x.capitalize() for x in rule_name.split('_')) + 'Node'

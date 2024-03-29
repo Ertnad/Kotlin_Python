@@ -225,6 +225,22 @@ class WhenNode(StmtNode):
         return 'when'
 
 
+class VarDecl(StmtNode):
+    def __init__(self, const: bool, name: IdentNode, type: Optional[IdentNode], value: Optional[ExprNode]):
+        super().__init__()
+        self.const = const
+        self.name = name
+        self.type = type
+        self.value = value
+
+    @property
+    def childs(self) -> Tuple[AstNode]:
+        return (self.value,) if self.value else ()
+
+    def __str__(self) -> str:
+        return f'{"val" if self.const else "var"} {self.name}{": " + str(self.type) if self.type else ""}'
+
+
 class StmtListNode(AstNode):
     def __init__(self, *exprs: AstNode):
         super().__init__()

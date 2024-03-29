@@ -106,7 +106,7 @@ def main():
     prog14 = """
         c = if (a > b) a else if (a == b) b else d
     """
-    prog = mel_parser.parse(prog14)
+    prog = mel_parser.parse(prog5)
     print(*prog.tree, sep=os.linesep)
 
 
