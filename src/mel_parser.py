@@ -35,14 +35,16 @@ def _make_parser():
 
     keywords = IF | ELSE | WHILE | WHEN | FOR | IN | VAL | VAR | FUN
 
+    int_num = ppc.number.copy().setName("int_num")
     num = ppc.fnumber.copy().setName('num')
     ident = ~keywords + ppc.identifier  # ~ переопределён для парсера и означает не keywords
     type_ = ident.copy().setName('type')
 
+    in_ = pp.Forward()
     expr = pp.Forward()
     params = pp.Optional(expr + pp.ZeroOrMore(COMMA + expr))
     call = ident + LPAR + params + RPAR
-    group = call | ident | num | LPAR + expr + RPAR
+    group = call | ident | num | LPAR + expr + RPAR | in_
     not_ = pp.Forward().setName('unary')
     not_ << (NOT + (not_ | group))
     not_or_group = not_ | group
@@ -67,25 +69,11 @@ def _make_parser():
 
     for_ = FOR + LPAR + stmt_or_empty + SEMI + expr_or_empty + SEMI + stmt_or_empty + RPAR + stmt
 
-    in_ = IN + num + POINT + POINT + num
-
+    in_ << IN + int_num + POINT + int_num
     when_expr = (expr | in_) + OPERATOR + (expr | stmt)
     when = (WHEN + pp.Optional(LPAR + expr + RPAR) + LBRACE + pp.OneOrMore(when_expr) + RBRACE)
 
     stmt_list = pp.Forward()  # объявляем
-
-    """stmt1 = (
-            call |
-            assign
-    )
-    stmt2 = (
-            if_ |
-            for_ |
-            when |
-            LBRACE + stmt_list + RBRACE
-    )
-
-    stmt << ((stmt1 + SEMI) | stmt2)"""
 
     stmt << (
             call |
@@ -93,6 +81,7 @@ def _make_parser():
             if_ |
             for_ |
             in_ |
+            not_ |
             when |
             LBRACE + stmt_list + RBRACE
     )
@@ -123,6 +112,7 @@ def _make_parser():
                 cls = eval(cls)
                 if not inspect.isabstract(cls):
                     def parse_action(s, loc, tocs):
+                        print(rule_name)
                         return cls(*tocs)
 
                     parser.setParseAction(parse_action)

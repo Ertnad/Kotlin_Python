@@ -5,15 +5,15 @@ from enum import Enum
 
 class AstNode(ABC):
     @property
-    def childs(self)->Tuple['AstNode', ...]:
+    def childs(self) -> Tuple['AstNode', ...]:
         return ()
 
     @abstractmethod
-    def __str__(self)->str:
+    def __str__(self) -> str:
         pass
 
     @property
-    def tree(self)->[str, ...]:
+    def tree(self) -> [str, ...]:
         res = [str(self)]
         childs = self.childs
         for i, child in enumerate(childs):
@@ -23,7 +23,7 @@ class AstNode(ABC):
             res.extend(((ch0 if j == 0 else ch) + ' ' + s for j, s in enumerate(child.tree)))
         return res
 
-    def visit(self, func: Callable[['AstNode'], None])->None:
+    def visit(self, func: Callable[['AstNode'], None]) -> None:
         func(self)
         map(func, self.childs)
 
@@ -44,7 +44,16 @@ class NumNode(literalNode):
         super().__init__()
         self.num = float(num)
 
-    def __str__(self)->str:
+    def __str__(self) -> str:
+        return str(self.num)
+
+
+class IntNumNode(literalNode):
+    def __init__(self, num: int):
+        super().__init__()
+        self.num = int(num)
+
+    def __str__(self) -> str:
         return str(self.num)
 
 
@@ -174,13 +183,13 @@ class ForNode(StmtNode):
 
 
 class InNode(ExprNode):
-    def __init__(self, arg1: NumNode, arg2: NumNode):
+    def __init__(self, arg1: IntNumNode, arg2: IntNumNode):
         super().__init__()
         self.arg1 = arg1
         self.arg2 = arg2
 
     @property
-    def childs(self) -> Tuple[NumNode, NumNode]:
+    def childs(self) -> Tuple[IntNumNode, IntNumNode]:
         return self.arg1, self.arg2
 
     def __str__(self) -> str:

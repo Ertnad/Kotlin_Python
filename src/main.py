@@ -41,7 +41,7 @@ def main():
                     print(a)
                     a = 2
                 }
-                in 10 .. 30->print(b)
+                in 10..30->print(b)
             }
         """
     prog5 = """
@@ -58,7 +58,26 @@ def main():
                     i = i + 1
                 }
             """
-    prog = mel_parser.parse(prog7)
+    prog8 = """
+            a = 5 + 6
+            a = 5 - 6
+            a = 5 * 6
+            a = 5 / 6
+            a = 5 >= 6
+            a = 5 <= 6
+            a = 5 > 6
+            a = 5 < 6
+            a = 5 == 6
+            a = 5 != 6
+            a = 5 && 6
+            a = 5 || 6
+            a = !!a
+            in 10..11
+        """
+    prog9 = """
+        !in 10..11
+    """
+    prog = mel_parser.parse(prog9)
     print(*prog.tree, sep=os.linesep)
 
 
