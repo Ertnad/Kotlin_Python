@@ -63,15 +63,18 @@ def _make_parser():
     empty_expr = pp.Group(pp.empty).setParseAction(lambda s, loc, tocs: NumNode(1))
     expr_or_empty = expr | empty_expr
 
-    assign = ident + ASSIGN.suppress() + expr
+    when = pp.Forward()
+    assign = ident + ASSIGN.suppress() + (expr | when)
 
     if_ = IF + LPAR + expr + RPAR + stmt + pp.Optional(ELSE + stmt)
 
     for_ = FOR + LPAR + stmt_or_empty + SEMI + expr_or_empty + SEMI + stmt_or_empty + RPAR + stmt
 
     in_ << IN + int_num + POINT + int_num
+
     when_expr = (expr | in_) + OPERATOR + (expr | stmt)
-    when = (WHEN + pp.Optional(LPAR + expr + RPAR) + LBRACE + pp.OneOrMore(when_expr) + RBRACE)
+    when << (WHEN + pp.Optional(LPAR + expr + RPAR) + LBRACE + pp.OneOrMore(when_expr)
+            + pp.Optional(ELSE + OPERATOR + (expr | stmt)) + RBRACE)
 
     stmt_list = pp.Forward()  # объявляем
 
@@ -80,8 +83,6 @@ def _make_parser():
             assign |
             if_ |
             for_ |
-            in_ |
-            not_ |
             when |
             LBRACE + stmt_list + RBRACE
     )
@@ -112,7 +113,6 @@ def _make_parser():
                 cls = eval(cls)
                 if not inspect.isabstract(cls):
                     def parse_action(s, loc, tocs):
-                        print(rule_name)
                         return cls(*tocs)
 
                     parser.setParseAction(parse_action)

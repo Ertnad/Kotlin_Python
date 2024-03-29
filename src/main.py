@@ -74,10 +74,37 @@ def main():
             a = !!a
             in 10..11
         """
-    prog9 = """
-        !in 10..11
+    prog10 = """
+        when(a + b){
+            a -> println(b)
+            b -> println(a)
+            a + 5 -> println(a + 5)
+            in 10..12 -> { a = a + 1 }
+            !in 10..12 -> { isEnable = 2 }
+            else -> { a = 3 }
+        }
     """
-    prog = mel_parser.parse(prog9)
+    prog11 = """
+        if (a > 3) {
+            print(1);
+            a = 3;
+        }
+    """
+    prog12 = """
+        c = when(a) {
+            1 -> a
+            2 -> a + 1
+            else -> a + 1
+        }
+    """
+    prog13 = """
+        when{
+            (b > 10) -> println(b)
+            (a > 10) -> println(a)
+            else -> println(c)
+        }
+    """
+    prog = mel_parser.parse(prog12)
     print(*prog.tree, sep=os.linesep)
 
 

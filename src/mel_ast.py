@@ -211,14 +211,15 @@ class WhenExprNode(StmtNode):
 
 
 class WhenNode(StmtNode):
-    def __init__(self, cond: ExprNode, *when_expr: WhenExprNode):
+    def __init__(self, cond: ExprNode, *when_expr: WhenExprNode, else_stmt: Optional[StmtNode] = None):
         super().__init__()
         self.cond = cond
         self.when_expr = when_expr
+        self.else_stmt = else_stmt
 
     @property
-    def childs(self) -> tuple[ExprNode, WhenExprNode]:
-        return self.cond, *self.when_expr
+    def childs(self) -> tuple[ExprNode, WhenExprNode, Optional[StmtNode]]:
+        return self.cond, *self.when_expr + ((self.else_stmt,) if self.else_stmt else tuple())
 
     def __str__(self) -> str:
         return 'when'
