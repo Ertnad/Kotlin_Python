@@ -66,7 +66,8 @@ def _make_parser():
     when = pp.Forward()
     assign = ident + ASSIGN.suppress() + (expr | when)
 
-    if_ = IF + LPAR + expr + RPAR + stmt + pp.Optional(ELSE + stmt)
+    if_ = (IF + LPAR + expr + RPAR + stmt + pp.Optional(ELSE + stmt)) |\
+          (IF + LPAR + expr + RPAR + ident | expr + ELSE + ident | expr)
 
     for_ = FOR + LPAR + stmt_or_empty + SEMI + expr_or_empty + SEMI + stmt_or_empty + RPAR + stmt
 
