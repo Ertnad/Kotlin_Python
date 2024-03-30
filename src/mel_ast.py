@@ -224,6 +224,20 @@ class WhenExprNode(StmtNode):
         return '->'
 
 
+class WhileNode(StmtNode):
+    def __init__(self, cond: ExprNode, *when_expr: WhenExprNode):
+        super().__init__()
+        self.cond = cond
+        self.when_expr = when_expr
+
+    @property
+    def childs(self) -> tuple[ExprNode, Any]:
+        return self.cond, *self.when_expr
+
+    def __str__(self) -> str:
+        return 'while'
+
+
 class WhenNode(StmtNode):
     def __init__(self, cond: ExprNode, *when_expr: WhenExprNode, else_stmt: Optional[StmtNode] = None):
         super().__init__()

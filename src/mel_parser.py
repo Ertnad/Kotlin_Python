@@ -27,7 +27,7 @@ def _make_parser():
     WHILE = pp.Keyword('while').suppress()
     WHEN = pp.Keyword('when').suppress()
     FOR = pp.Keyword('for').suppress()
-    EACH = pp.Keyword('each').suppress()
+    #EACH = pp.Keyword('each').suppress()
     IN = pp.Keyword('in').suppress()
     CONTINUE = pp.Keyword('continue').suppress()
     BREAK = pp.Keyword('break').suppress()
@@ -91,7 +91,7 @@ def _make_parser():
 
     each_expr = pp.Forward()
     iter_expr = ident + IN + expr
-    each_expr << (EACH + LPAR + iter_expr + RPAR + stmt)
+    each_expr << (FOR + LPAR + iter_expr + RPAR + stmt)
 
     in_ << IN + int_num + POINT + int_num
 
