@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Tuple, Optional, Union
+from typing import Callable, Tuple, Optional, Union, Any
 from enum import Enum
 
 
@@ -218,7 +218,7 @@ class WhenNode(StmtNode):
         self.else_stmt = else_stmt
 
     @property
-    def childs(self) -> tuple[ExprNode, WhenExprNode, Optional[StmtNode]]:
+    def childs(self) -> tuple[ExprNode, Any]:
         return self.cond, *self.when_expr + ((self.else_stmt,) if self.else_stmt else tuple())
 
     def __str__(self) -> str:
@@ -241,6 +241,29 @@ class VarDecl(StmtNode):
         return f'{"val" if self.const else "var"} {self.name}{": " + str(self.type) if self.type else ""}'
 
 
+class ParamNode(AstNode):
+    def __init__(self, name: IdentNode, param_type: IdentNode):
+        super().__init__()
+        self.name = name
+        self.param_type = param_type
+
+    def __str__(self) -> str:
+        return f"{self.name}: {self.param_type}"
+
+class FunDecl(ExprNode):
+    def __init__(self, name: AstNode, type: IdentNode):
+        super().__init__()
+        self.name = name
+        self.type = type
+        self.param = ParamNode(self.name, self.type)
+
+    @property
+    def childs(self) -> Tuple[ParamNode]:
+        return (self.param,)
+
+    def __str__(self) -> str:
+        return 'fun'
+
 class StmtListNode(AstNode):
     def __init__(self, *exprs: AstNode):
         super().__init__()
@@ -252,3 +275,17 @@ class StmtListNode(AstNode):
 
     def __str__(self) -> str:
         return '...'
+
+
+class FunCallWithBodyNode(ExprNode):
+    def __init__(self, func: IdentNode, body: StmtListNode):
+        super().__init__()
+        self.func = func
+        self.body = body
+
+    @property
+    def childs(self) -> Tuple[IdentNode, StmtListNode]:
+        return self.func, self.body
+
+    def __str__(self) -> str:
+        return f'call'

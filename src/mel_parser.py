@@ -87,6 +87,8 @@ def _make_parser():
 
     stmt_list = pp.Forward()  # объявляем
 
+    fun_decl = (FUN + ident + LPAR + RPAR + COLON + type_ + LBRACE + stmt_list + RBRACE).setName('func')
+
     stmt << (
             call |
             assign |
@@ -94,9 +96,13 @@ def _make_parser():
             for_ |
             when |
             var_inner |
+            fun_decl |
             LBRACE + stmt_list + RBRACE
     )
-    stmt_list << pp.ZeroOrMore(stmt + pp.ZeroOrMore(SEMI))  # переопределяем
+
+    stmt_list << pp.ZeroOrMore(stmt + pp.Optional(SEMI))  # переопределяем
+
+
     program = stmt_list.ignore(pp.cStyleComment).ignore(pp.dblSlashComment) + pp.StringEnd()
 
     start = program
@@ -116,9 +122,15 @@ def _make_parser():
             parser.setParseAction(bin_op_parse_action)
         elif rule_name == 'unary':
             def un_op_parse_action(s, loc, tocs):
+
                 return UnOpNode(UnOp(tocs[0]), tocs[1])
 
             parser.setParseAction(un_op_parse_action)
+        elif rule_name == 'func':
+            def func_parse_action(s, loc, tocs):
+                return FunDecl(tocs[1], tocs[2])
+
+            parser.setParseAction(func_parse_action)
         else:
             cls = ''.join(x.capitalize() for x in rule_name.split('_')) + 'Node'
             with suppress(NameError):

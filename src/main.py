@@ -47,6 +47,9 @@ def main():
     prog5 = """
         val a: Int = 1
     """
+    prog15 = """
+        var a: Int = 1
+    """
     prog6 = """
             for(i = 8; i < 9; i = i + 1) {
                 print(i)
@@ -106,7 +109,24 @@ def main():
     prog14 = """
         c = if (a > b) a else if (a == b) b else d
     """
-    prog = mel_parser.parse(prog5)
+    prog16 = """
+        fun sum():Int {
+            for(i = 8; i < 9; i = i + 1) {
+                print(i)
+            }
+        }
+        """
+    prog17 = """
+    fun sum(a: int, b: int) : int {
+        var result: int = 0
+        for(i = 0; i < a; i = i + 1) {
+            result = result + b
+        }
+        return result
+    }
+    """
+
+    prog = mel_parser.parse(prog14)
     print(*prog.tree, sep=os.linesep)
 
 
