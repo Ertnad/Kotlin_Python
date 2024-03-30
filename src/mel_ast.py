@@ -242,13 +242,17 @@ class VarDecl(StmtNode):
 
 
 class ParamNode(AstNode):
-    def __init__(self, name: IdentNode, param_type: IdentNode):
+    def __init__(self, name: CallNode, return_type: Optional[IdentNode] = None):
         super().__init__()
         self.name = name
-        self.param_type = param_type
+        self.return_type = return_type
+
+    @property
+    def childs(self) -> Tuple[CallNode, Optional[IdentNode]]:
+        return (self.name, self.return_type) if self.return_type else (self.name,)
 
     def __str__(self) -> str:
-        return f"{self.name}: {self.param_type}"
+        return f"{self.name}: {self.return_type}"
 
 
 class StmtListNode(AstNode):
@@ -265,15 +269,14 @@ class StmtListNode(AstNode):
 
 
 class FunDecl(ExprNode):
-    def __init__(self, name: CallNode, return_type: Optional[IdentNode], body: StmtListNode):
+    def __init__(self, name: ParamNode, body: StmtListNode):
         super().__init__()
         self.name = name
-        self.return_type = return_type
         self.body = body
 
     @property
-    def childs(self) -> Tuple[CallNode, Optional[IdentNode], StmtListNode]:
-        return self.name, self.return_type, self.body
+    def childs(self) -> Tuple[ParamNode, StmtListNode]:
+        return self.name, self.body
 
     def __str__(self) -> str:
         return 'fun'

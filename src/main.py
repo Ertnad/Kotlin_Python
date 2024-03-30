@@ -110,7 +110,7 @@ def main():
         c = if (a > b) a else if (a == b) b else d
     """
     prog16 = """
-        fun sum(a: Int, b: Int) {
+        fun sum(a: Int, b: Int): Int{
             print(i);
             print(b);
         }

@@ -100,7 +100,7 @@ def _make_parser():
     stmt_list = pp.Forward()  # объявляем
 
     param_ = call + pp.Optional(COLON + ident)
-    fun_decl = (FUN + call + pp.Optional(COLON + type_) + LBRACE + stmt_list + RBRACE)
+    fun_decl = (FUN + param_ + LBRACE + stmt_list + RBRACE)
 
     stmt << (
             call |
