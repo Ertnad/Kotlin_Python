@@ -202,7 +202,7 @@ def main():
             }
         }
     """
-    prog = mel_parser.parse(prog20)
+    prog = mel_parser.parse(prog16)
     print(*prog.tree, sep=os.linesep)
 
 

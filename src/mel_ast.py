@@ -269,18 +269,18 @@ class VarDecl(StmtNode):
         return f'{"val" if self.const else "var"} {self.name}{": " + str(self.type) if self.type else ""}'
 
 
-class ParamNode(AstNode):
-    def __init__(self, name: CallNode, return_type: Optional[IdentNode] = None):
+class FunParamsNode(ExprNode):
+    def __init__(self, name: IdentNode, type_: IdentNode):
         super().__init__()
         self.name = name
-        self.return_type = return_type
+        self.type_ = type_
 
     @property
-    def childs(self) -> Tuple[CallNode, Optional[IdentNode]]:
-        return (self.name, self.return_type) if self.return_type else (self.name,)
+    def childs(self) -> Tuple[IdentNode, IdentNode]:
+        return self.name, self.type_
 
     def __str__(self) -> str:
-        return f"{self.name}: {self.return_type}"
+        return f"{self.name}: {self.type_}"
 
 
 class StmtListNode(AstNode):
@@ -297,14 +297,16 @@ class StmtListNode(AstNode):
 
 
 class FunDecl(ExprNode):
-    def __init__(self, name: ParamNode, body: StmtListNode):
+    def __init__(self, name: IdentNode, *params: FunParamsNode, return_type: Optional[IdentNode] = None, body: StmtListNode):
         super().__init__()
         self.name = name
+        self.params = params
+        self.return_type = return_type
         self.body = body
 
     @property
-    def childs(self) -> Tuple[ParamNode, StmtListNode]:
-        return self.name, self.body
+    def childs(self) -> Tuple[IdentNode, FunParamsNode, Optional[IdentNode], StmtListNode]:
+        return self.name, *self.params, self.return_type, self.body
 
     def __str__(self) -> str:
         return 'fun'

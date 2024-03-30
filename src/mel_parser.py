@@ -48,8 +48,7 @@ def _make_parser():
     expr = pp.Forward()
     return_ = pp.Forward()
     params = pp.Optional(expr + pp.ZeroOrMore(COMMA + expr))
-    call = (ident + LPAR + params + RPAR) | (ident + LPAR + pp.Optional(ident + COLON + ident) +
-                                             pp.ZeroOrMore(COMMA + ident + COLON + ident) + RPAR)
+    call = (ident + LPAR + params + RPAR) #| (ident + LPAR + pp.Optional(ident + COLON + ident) + pp.ZeroOrMore(COMMA + ident + COLON + ident) + RPAR)
     group = call | ident | num | LPAR + expr + RPAR | in_
     not_ = pp.Forward().setName('unary')
     not_ << (NOT + (not_ | group))
@@ -102,8 +101,14 @@ def _make_parser():
     stmt_list = pp.Forward()  # объявляем
 
     return_ << RETURN + expr_or_empty
-    param_ = call + pp.Optional(COLON + ident)
-    fun_decl = (FUN + param_ + LBRACE + stmt_list + RBRACE)
+
+    fun_params = ident + COLON + ident
+    #params_ident = (ident + LPAR + pp.Optional(fun_params + pp.ZeroOrMore(COMMA + fun_params)) + RPAR)
+    # название([пар1: тип, ...])[: тип]
+    #param_ = pp.Optional(fun_params + pp.ZeroOrMore(COMMA + fun_params))
+    # fun
+    fun_decl = (FUN + ident + LPAR + pp.Optional(fun_params + pp.ZeroOrMore(COMMA + fun_params))
+                + RPAR + pp.Optional(COLON + ident) + LBRACE + stmt_list + RBRACE)
 
     stmt << (
             call |
