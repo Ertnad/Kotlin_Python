@@ -110,10 +110,9 @@ def main():
         c = if (a > b) a else if (a == b) b else d
     """
     prog16 = """
-        fun sum():Int {
-            for(i = 8; i < 9; i = i + 1) {
-                print(i)
-            }
+        fun sum(a: Int, b: Int) {
+            print(i);
+            print(b);
         }
         """
     prog17 = """
@@ -144,7 +143,7 @@ def main():
         }
     """
 
-    prog = mel_parser.parse(while_check)
+    prog = mel_parser.parse(prog16)
     print(*prog.tree, sep=os.linesep)
 
 

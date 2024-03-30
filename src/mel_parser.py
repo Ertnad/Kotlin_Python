@@ -34,7 +34,7 @@ def _make_parser():
 
     VAL = pp.Keyword('val')
     VAR = pp.Keyword("var")
-    FUN = pp.Keyword("fun")
+    FUN = pp.Keyword("fun").suppress()
 
     keywords = IF | ELSE | WHILE | WHEN | FOR | IN | VAL | VAR | FUN
 
@@ -46,7 +46,8 @@ def _make_parser():
     in_ = pp.Forward()
     expr = pp.Forward()
     params = pp.Optional(expr + pp.ZeroOrMore(COMMA + expr))
-    call = ident + LPAR + params + RPAR
+    call = (ident + LPAR + params + RPAR) | (ident + LPAR + pp.Optional(ident + COLON + ident) +
+                                             pp.ZeroOrMore(COMMA + ident + COLON + ident) + RPAR)
     group = call | ident | num | LPAR + expr + RPAR | in_
     not_ = pp.Forward().setName('unary')
     not_ << (NOT + (not_ | group))
@@ -98,7 +99,8 @@ def _make_parser():
 
     stmt_list = pp.Forward()  # объявляем
 
-    fun_decl = (FUN + ident + LPAR + RPAR + COLON + type_ + LBRACE + stmt_list + RBRACE).setName('func')
+    param_ = call + pp.Optional(COLON + ident)
+    fun_decl = (FUN + call + pp.Optional(COLON + type_) + LBRACE + stmt_list + RBRACE)
 
     stmt << (
             call |
@@ -139,11 +141,6 @@ def _make_parser():
                 return UnOpNode(UnOp(tocs[0]), tocs[1])
 
             parser.setParseAction(un_op_parse_action)
-        elif rule_name == 'func':
-            def func_parse_action(s, loc, tocs):
-                return FunDecl(tocs[1], tocs[2])
-
-            parser.setParseAction(func_parse_action)
         elif rule_name == 'while':
             def while_parse_action(s, loc, tocs):
                 condition = tocs[2]

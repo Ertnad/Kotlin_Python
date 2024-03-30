@@ -251,21 +251,6 @@ class ParamNode(AstNode):
         return f"{self.name}: {self.param_type}"
 
 
-class FunDecl(ExprNode):
-    def __init__(self, name: AstNode, type: IdentNode):
-        super().__init__()
-        self.name = name
-        self.type = type
-        self.param = ParamNode(self.name, self.type)
-
-    @property
-    def childs(self) -> Tuple[ParamNode]:
-        return (self.param,)
-
-    def __str__(self) -> str:
-        return 'fun'
-
-
 class StmtListNode(AstNode):
     def __init__(self, *exprs: AstNode):
         super().__init__()
@@ -277,6 +262,21 @@ class StmtListNode(AstNode):
 
     def __str__(self) -> str:
         return '...'
+
+
+class FunDecl(ExprNode):
+    def __init__(self, name: CallNode, return_type: Optional[IdentNode], body: StmtListNode):
+        super().__init__()
+        self.name = name
+        self.return_type = return_type
+        self.body = body
+
+    @property
+    def childs(self) -> Tuple[CallNode, Optional[IdentNode], StmtListNode]:
+        return self.name, self.return_type, self.body
+
+    def __str__(self) -> str:
+        return 'fun'
 
 
 class FunCallWithBodyNode(ExprNode):
