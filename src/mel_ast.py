@@ -195,6 +195,22 @@ class InNode(ExprNode):
         return 'in'
 
 
+class EachNode(StmtNode):
+    def __init__(self, var: IdentNode, collection: ExprNode, body: StmtNode):
+        super().__init__()
+        self.var = var
+        self.collection = collection
+        self.body = body
+
+    @property
+    def childs(self) -> Tuple[IdentNode, ExprNode, StmtNode]:
+        return self.var, self.collection, self.body
+
+    def __str__(self) -> str:
+        return 'each'
+
+
+
 class WhenExprNode(StmtNode):
     def __init__(self, cond: ExprNode, then_stmt: StmtNode):
         super().__init__()

@@ -27,6 +27,7 @@ def _make_parser():
     WHILE = pp.Keyword('while').suppress()
     WHEN = pp.Keyword('when').suppress()
     FOR = pp.Keyword('for').suppress()
+    EACH = pp.Keyword('each').suppress()
     IN = pp.Keyword('in').suppress()
 
     VAL = pp.Keyword('val')
@@ -79,10 +80,13 @@ def _make_parser():
 
     while_ = pp.Forward()
 
-    # Определение цикла while с возможностью содержать одно выражение или блок выражений в фигурных скобках
     while_ << (WHILE + LPAR + expr + RPAR + (stmt | (LBRACE + stmt + RBRACE))).setName("while")
 
     for_ = FOR + LPAR + stmt_or_empty + SEMI + expr_or_empty + SEMI + stmt_or_empty + RPAR + stmt
+
+    each_expr = pp.Forward()
+    iter_expr = ident + IN + expr
+    each_expr << (EACH + LPAR + iter_expr + RPAR + stmt)
 
     in_ << IN + int_num + POINT + int_num
 
@@ -99,6 +103,7 @@ def _make_parser():
             assign |
             if_ |
             for_ |
+            each_expr |
             when |
             var_inner |
             fun_decl |

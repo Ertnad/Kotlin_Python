@@ -132,6 +132,11 @@ def main():
             a = a + 1
     }
     """
+    for_each_check = """
+        each(x in range(5)) {
+            print(x);
+        }
+    """
 
     prog = mel_parser.parse(while_check)
     print(*prog.tree, sep=os.linesep)
