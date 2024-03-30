@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Tuple, Optional, Union, Any
 from enum import Enum
+from typing import Callable, Tuple, Optional, Any
+
 
 class AstNode(ABC):
     @property
@@ -195,22 +196,6 @@ class InNode(ExprNode):
         return 'in'
 
 
-class EachNode(StmtNode):
-    def __init__(self, var: IdentNode, collection: ExprNode, body: StmtNode):
-        super().__init__()
-        self.var = var
-        self.collection = collection
-        self.body = body
-
-    @property
-    def childs(self) -> Tuple[IdentNode, ExprNode, StmtNode]:
-        return self.var, self.collection, self.body
-
-    def __str__(self) -> str:
-        return 'each'
-
-
-
 class WhenExprNode(StmtNode):
     def __init__(self, cond: ExprNode, then_stmt: StmtNode):
         super().__init__()
@@ -238,20 +223,6 @@ class WhenNode(StmtNode):
 
     def __str__(self) -> str:
         return 'when'
-
-
-class WhileNode(StmtNode):
-    def __init__(self, condition: ExprNode, body: StmtNode):
-        super().__init__()
-        self.condition = condition
-        self.body = body
-
-    @property
-    def childs(self) -> Tuple[ExprNode, StmtNode]:
-        return self.condition, self.body
-
-    def __str__(self) -> str:
-        return 'while'
 
 
 class VarDecl(StmtNode):
@@ -320,3 +291,13 @@ class FunCallWithBodyNode(ExprNode):
 
     def __str__(self) -> str:
         return f'call'
+
+
+class ContinueNode(StmtNode):
+    def __str__(self) -> str:
+        return 'continue'
+
+
+class BreakNode(StmtNode):
+    def __str__(self) -> str:
+        return 'break'

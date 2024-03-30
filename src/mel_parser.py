@@ -29,6 +29,8 @@ def _make_parser():
     FOR = pp.Keyword('for').suppress()
     EACH = pp.Keyword('each').suppress()
     IN = pp.Keyword('in').suppress()
+    CONTINUE = pp.Keyword('continue').suppress()
+    BREAK = pp.Keyword('break').suppress()
 
     VAL = pp.Keyword('val')
     VAR = pp.Keyword("var")
@@ -108,14 +110,14 @@ def _make_parser():
             var_inner |
             fun_decl |
             while_ |
-            LBRACE + stmt_list + RBRACE
+            LBRACE + stmt_list + RBRACE |
+            CONTINUE |
+            BREAK  # добавляем новые операторы
     )
 
     stmt_list << pp.ZeroOrMore(stmt + pp.Optional(SEMI))  # переопределяем
 
-
     program = stmt_list.ignore(pp.cStyleComment).ignore(pp.dblSlashComment) + pp.StringEnd()
-
 
     start = program
 
@@ -134,7 +136,6 @@ def _make_parser():
             parser.setParseAction(bin_op_parse_action)
         elif rule_name == 'unary':
             def un_op_parse_action(s, loc, tocs):
-
                 return UnOpNode(UnOp(tocs[0]), tocs[1])
 
             parser.setParseAction(un_op_parse_action)
@@ -143,12 +144,15 @@ def _make_parser():
                 return FunDecl(tocs[1], tocs[2])
 
             parser.setParseAction(func_parse_action)
-
         elif rule_name == 'while':
             def while_parse_action(s, loc, tocs):
-                return WhileNode(tocs[2], tocs[4])
-            parser.setParseAction(while_parse_action)
+                condition = tocs[2]
+                body = tocs[4]
+                while condition.eval():
+                    body.execute()
+                return None  # Возвращаем None, так как у while нет значения
 
+            parser.setParseAction(while_parse_action)
         else:
             cls = ''.join(x.capitalize() for x in rule_name.split('_')) + 'Node'
             with suppress(NameError):

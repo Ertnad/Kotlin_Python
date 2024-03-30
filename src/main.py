@@ -126,10 +126,16 @@ def main():
     }
     """
     while_check = """
-        var a: Int = 1
-        while (a < 1) {
-            print(a)
-            a = a + 1
+        val x: int = 2;
+    while (x > 0) {
+        if (x == 5) {
+            x = x - 1;
+            continue;
+        }
+        if (x < 3) {
+            break;
+        }
+        x = x - 1;
     }
     """
     for_each_check = """
