@@ -113,6 +113,7 @@ def main():
         fun sum(a: Int, b: Int): Int{
             print(i);
             print(b);
+            return a;
         }
         """
     prog17 = """

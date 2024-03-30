@@ -31,12 +31,13 @@ def _make_parser():
     IN = pp.Keyword('in').suppress()
     CONTINUE = pp.Keyword('continue').suppress()
     BREAK = pp.Keyword('break').suppress()
+    RETURN = pp.Keyword('return').suppress()
 
     VAL = pp.Keyword('val')
     VAR = pp.Keyword("var")
     FUN = pp.Keyword("fun").suppress()
 
-    keywords = IF | ELSE | WHILE | WHEN | FOR | IN | VAL | VAR | FUN
+    keywords = IF | ELSE | WHILE | WHEN | FOR | IN | VAL | VAR | FUN | RETURN
 
     int_num = ppc.number.copy().setName("int_num")
     num = ppc.fnumber.copy().setName('num')
@@ -45,6 +46,7 @@ def _make_parser():
 
     in_ = pp.Forward()
     expr = pp.Forward()
+    return_ = pp.Forward()
     params = pp.Optional(expr + pp.ZeroOrMore(COMMA + expr))
     call = (ident + LPAR + params + RPAR) | (ident + LPAR + pp.Optional(ident + COLON + ident) +
                                              pp.ZeroOrMore(COMMA + ident + COLON + ident) + RPAR)
@@ -99,6 +101,7 @@ def _make_parser():
 
     stmt_list = pp.Forward()  # объявляем
 
+    return_ << RETURN + expr_or_empty
     param_ = call + pp.Optional(COLON + ident)
     fun_decl = (FUN + param_ + LBRACE + stmt_list + RBRACE)
 
@@ -112,6 +115,7 @@ def _make_parser():
             var_inner |
             fun_decl |
             while_ |
+            return_ |
             LBRACE + stmt_list + RBRACE |
             CONTINUE |
             BREAK  # добавляем новые операторы

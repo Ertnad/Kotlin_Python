@@ -80,6 +80,20 @@ class CallNode(ExprNode):
         return 'call'
 
 
+class ReturnNode(ExprNode):
+    def __init__(self, func: IdentNode, *params: ExprNode):
+        super().__init__()
+        self.func = func
+        self.params = params
+
+    @property
+    def childs(self) -> Tuple[IdentNode, ExprNode]:
+        return self.func, *self.params
+
+    def __str__(self) -> str:
+        return 'return'
+
+
 class UnOp(Enum):
     NOT = '!'
 
