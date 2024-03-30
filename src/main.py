@@ -125,8 +125,15 @@ def main():
         return result
     }
     """
+    while_check = """
+        var a: Int = 1
+        while (a < 1) {
+            print(a)
+            a = a + 1
+    }
+    """
 
-    prog = mel_parser.parse(prog14)
+    prog = mel_parser.parse(while_check)
     print(*prog.tree, sep=os.linesep)
 
 

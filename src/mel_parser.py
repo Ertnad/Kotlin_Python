@@ -77,6 +77,11 @@ def _make_parser():
     if_ << ((IF + LPAR + expr + RPAR + stmt + pp.Optional(ELSE + stmt))
             | (IF + LPAR + expr + RPAR + (ident | expr) + ELSE + (ident | expr | stmt)))
 
+    while_ = pp.Forward()
+
+    # Определение цикла while с возможностью содержать одно выражение или блок выражений в фигурных скобках
+    while_ << (WHILE + LPAR + expr + RPAR + (stmt | (LBRACE + stmt + RBRACE))).setName("while")
+
     for_ = FOR + LPAR + stmt_or_empty + SEMI + expr_or_empty + SEMI + stmt_or_empty + RPAR + stmt
 
     in_ << IN + int_num + POINT + int_num
@@ -97,6 +102,7 @@ def _make_parser():
             when |
             var_inner |
             fun_decl |
+            while_ |
             LBRACE + stmt_list + RBRACE
     )
 
@@ -104,6 +110,7 @@ def _make_parser():
 
 
     program = stmt_list.ignore(pp.cStyleComment).ignore(pp.dblSlashComment) + pp.StringEnd()
+
 
     start = program
 
@@ -131,6 +138,12 @@ def _make_parser():
                 return FunDecl(tocs[1], tocs[2])
 
             parser.setParseAction(func_parse_action)
+
+        elif rule_name == 'while':
+            def while_parse_action(s, loc, tocs):
+                return WhileNode(tocs[2], tocs[4])
+            parser.setParseAction(while_parse_action)
+
         else:
             cls = ''.join(x.capitalize() for x in rule_name.split('_')) + 'Node'
             with suppress(NameError):

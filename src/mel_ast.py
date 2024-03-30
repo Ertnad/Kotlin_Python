@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import Callable, Tuple, Optional, Union, Any
 from enum import Enum
 
-
 class AstNode(ABC):
     @property
     def childs(self) -> Tuple['AstNode', ...]:
@@ -225,6 +224,20 @@ class WhenNode(StmtNode):
         return 'when'
 
 
+class WhileNode(StmtNode):
+    def __init__(self, condition: ExprNode, body: StmtNode):
+        super().__init__()
+        self.condition = condition
+        self.body = body
+
+    @property
+    def childs(self) -> Tuple[ExprNode, StmtNode]:
+        return self.condition, self.body
+
+    def __str__(self) -> str:
+        return 'while'
+
+
 class VarDecl(StmtNode):
     def __init__(self, const: bool, name: IdentNode, type: Optional[IdentNode], value: Optional[ExprNode]):
         super().__init__()
@@ -250,6 +263,7 @@ class ParamNode(AstNode):
     def __str__(self) -> str:
         return f"{self.name}: {self.param_type}"
 
+
 class FunDecl(ExprNode):
     def __init__(self, name: AstNode, type: IdentNode):
         super().__init__()
@@ -263,6 +277,7 @@ class FunDecl(ExprNode):
 
     def __str__(self) -> str:
         return 'fun'
+
 
 class StmtListNode(AstNode):
     def __init__(self, *exprs: AstNode):
