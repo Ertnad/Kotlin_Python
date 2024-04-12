@@ -146,7 +146,7 @@ def main():
     prog20 = """
         fun combinedFunction() {
             var a: int = 2;
-            var b: int = 3;
+            val b: int = 3 + 6;
             var c: int = 4;
             
             if (a) {
@@ -169,10 +169,6 @@ def main():
             while (x > 0) {
                 if (x == 5) {
                     x = x - 1;
-                    continue;
-                }
-                if (x < 3) {
-                    break;
                 }
                 x = x - 1;
             }
@@ -190,7 +186,10 @@ def main():
             }
             
             when(a + b){
-                a -> println(b)
+                a -> {
+                    println(b);
+                    print(a);
+                }
                 b -> println(a)
                 a + 5 -> println(a + 5)
                 else -> { a = 3 }
@@ -201,8 +200,42 @@ def main():
                 !in 10..12 -> { isEnable = 2 }
             }
         }
+        
+        fun myFun(a: int) {
+            c = if (a > b) a else if (a == b) b else d
+        }
     """
-    prog = mel_parser.parse(prog16)
+    prog23 = """
+        fun sum(a: int, b: int) : int {
+            when(a + b){
+                a -> println(b)
+                b -> println(a)
+                a + 5 -> println(a + 5)
+                in 10..12 -> { a = a + 1 }
+                !in 10..12 -> { isEnable = 2 }
+                else -> { a = 3 }
+            }
+        }
+        fun test() {
+            a = 4
+        }
+    """
+
+    prog21 = """
+        fun sum(a: int) {
+            if (a > 3) {
+                print(1);
+                a = 3;
+            }
+        }
+    """
+
+    prog22 = """
+    fun sum(a: int) {
+        c = if (a > b) a else if (a == b) b else d
+    }
+    """
+    prog = mel_parser.parse(prog23)
     print(*prog.tree, sep=os.linesep)
 
 

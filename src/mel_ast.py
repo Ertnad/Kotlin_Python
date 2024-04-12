@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Callable, Tuple, Optional, Any
+from typing import Callable, Tuple, Optional, Any, Union
 
 
 class AstNode(ABC):
@@ -269,7 +269,21 @@ class VarDecl(StmtNode):
         return f'{"val" if self.const else "var"} {self.name}{": " + str(self.type) if self.type else ""}'
 
 
-class FunParamsNode(ExprNode):
+class FunParamNode(ExprNode):
+    def __init__(self, name: IdentNode, type_: IdentNode):
+        super().__init__()
+        self.name = name
+        self.type_ = type_
+
+    @property
+    def childs(self) -> Tuple[IdentNode, IdentNode]:
+        return self.name, self.type_
+
+    def __str__(self) -> str:
+        return f"{self.name}: {self.type_}"
+
+
+class FunParamNode(ExprNode):
     def __init__(self, name: IdentNode, type_: IdentNode):
         super().__init__()
         self.name = name
@@ -296,20 +310,33 @@ class StmtListNode(AstNode):
         return '...'
 
 
-class FunDecl(ExprNode):
-    def __init__(self, name: IdentNode, *params: FunParamsNode, return_type: Optional[IdentNode] = None, body: StmtListNode):
+class FunBodyNode(AstNode):
+    def __init__(self, *exprs: AstNode):
         super().__init__()
-        self.name = name
-        self.params = params
-        self.return_type = return_type
-        self.body = body
+        self.exprs = exprs
 
     @property
-    def childs(self) -> Tuple[IdentNode, FunParamsNode, Optional[IdentNode], StmtListNode]:
-        return self.name, *self.params, self.return_type, self.body
+    def childs(self) -> Tuple[AstNode]:
+        return self.exprs
 
     def __str__(self) -> str:
-        return 'fun'
+        return 'body'
+
+
+class FunDeclNode(ExprNode):
+    def __init__(self, name: IdentNode, *params_and_type_and_body: Union[FunParamNode, IdentNode, StmtListNode]):
+        super().__init__()
+        self.name = name
+        self.params = params_and_type_and_body[:-2]
+        self.return_type = params_and_type_and_body[-2]
+        self.body = params_and_type_and_body[-1]
+
+    @property
+    def childs(self) -> Tuple[FunParamNode, StmtListNode]:
+        return *self.params, self.body
+
+    def __str__(self) -> str:
+        return f'fun {self.name} : {self.return_type} ()'
 
 
 class FunCallWithBodyNode(ExprNode):

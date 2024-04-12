@@ -102,13 +102,16 @@ def _make_parser():
 
     return_ << RETURN + expr_or_empty
 
-    fun_params = ident + COLON + ident
+    empty_as_void = pp.Group(pp.empty).setParseAction(lambda s, loc, tocs: IdentNode('void'))
+    fun_param = ident + COLON + ident
     #params_ident = (ident + LPAR + pp.Optional(fun_params + pp.ZeroOrMore(COMMA + fun_params)) + RPAR)
     # название([пар1: тип, ...])[: тип]
-    #param_ = pp.Optional(fun_params + pp.ZeroOrMore(COMMA + fun_params))
+    #func_param = pp.Optional(fun_param + pp.ZeroOrMore(COMMA + fun_param))
     # fun
-    fun_decl = (FUN + ident + LPAR + pp.Optional(fun_params + pp.ZeroOrMore(COMMA + fun_params))
-                + RPAR + pp.Optional(COLON + ident) + LBRACE + stmt_list + RBRACE)
+
+    fun_body = stmt_list
+    fun_decl = (FUN + ident + LPAR + pp.Optional(fun_param + pp.ZeroOrMore(COMMA + fun_param))
+                + RPAR + ((COLON + ident) | empty_as_void) + LBRACE + fun_body + RBRACE)
 
     stmt << (
             call |
@@ -150,15 +153,6 @@ def _make_parser():
                 return UnOpNode(UnOp(tocs[0]), tocs[1])
 
             parser.setParseAction(un_op_parse_action)
-        elif rule_name == 'while':
-            def while_parse_action(s, loc, tocs):
-                condition = tocs[2]
-                body = tocs[4]
-                while condition.eval():
-                    body.execute()
-                return None  # Возвращаем None, так как у while нет значения
-
-            parser.setParseAction(while_parse_action)
         else:
             cls = ''.join(x.capitalize() for x in rule_name.split('_')) + 'Node'
             with suppress(NameError):
