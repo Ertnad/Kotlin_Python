@@ -1,5 +1,10 @@
 import os
+import sys
+import traceback
+
 import mel_parser
+from src import semantic_checker, semantic_base
+from src.semantic_checker import SemanticChecker
 
 
 def main():
@@ -220,7 +225,6 @@ def main():
             a = 4
         }
     """
-
     prog21 = """
         fun sum(a: int) {
             if (a > 3) {
@@ -229,14 +233,29 @@ def main():
             }
         }
     """
-
     prog22 = """
     fun sum(a: int) {
         c = if (a > b) a else if (a == b) b else d
     }
     """
-    prog = mel_parser.parse(prog23)
+    try:
+        prog = mel_parser.parse(prog5)
+    except Exception as e:
+        print('Ошибка: {}'.format(e.message), file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        exit(1)
     print(*prog.tree, sep=os.linesep)
+    print()
+    print('semantic-check:')
+    try:
+        checker = SemanticChecker()
+        scope = semantic_checker.prepare_global_scope()
+        checker.semantic_check(prog, scope)
+        print(*prog.tree, sep=os.linesep)
+        print()
+    except semantic_base.SemanticException as e:
+        print('Ошибка: {}'.format(e.message), file=sys.stderr)
+        exit(2)
 
 
 if __name__ == "__main__":
