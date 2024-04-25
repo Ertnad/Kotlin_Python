@@ -27,16 +27,17 @@ def _make_parser():
     WHILE = pp.Keyword('while').suppress()
     WHEN = pp.Keyword('when').suppress()
     FOR = pp.Keyword('for').suppress()
-    EACH = pp.Keyword('each').suppress()
+    #EACH = pp.Keyword('each').suppress()
     IN = pp.Keyword('in').suppress()
     CONTINUE = pp.Keyword('continue').suppress()
     BREAK = pp.Keyword('break').suppress()
+    RETURN = pp.Keyword('return').suppress()
 
     VAL = pp.Keyword('val')
     VAR = pp.Keyword("var")
-    FUN = pp.Keyword("fun")
+    FUN = pp.Keyword("fun").suppress()
 
-    keywords = IF | ELSE | WHILE | WHEN | FOR | IN | VAL | VAR | FUN
+    keywords = IF | ELSE | WHILE | WHEN | FOR | IN | VAL | VAR | FUN | RETURN
 
     int_num = ppc.number.copy().setName("int_num")
     num = ppc.fnumber.copy().setName('num')
@@ -45,8 +46,9 @@ def _make_parser():
 
     in_ = pp.Forward()
     expr = pp.Forward()
+    return_ = pp.Forward()
     params = pp.Optional(expr + pp.ZeroOrMore(COMMA + expr))
-    call = ident + LPAR + params + RPAR
+    call = (ident + LPAR + params + RPAR) #| (ident + LPAR + pp.Optional(ident + COLON + ident) + pp.ZeroOrMore(COMMA + ident + COLON + ident) + RPAR)
     group = call | ident | num | LPAR + expr + RPAR | in_
     not_ = pp.Forward().setName('unary')
     not_ << (NOT + (not_ | group))
@@ -88,7 +90,7 @@ def _make_parser():
 
     each_expr = pp.Forward()
     iter_expr = ident + IN + expr
-    each_expr << (EACH + LPAR + iter_expr + RPAR + stmt)
+    each_expr << (FOR + LPAR + iter_expr + RPAR + stmt)
 
     in_ << IN + int_num + POINT + int_num
 
@@ -98,7 +100,18 @@ def _make_parser():
 
     stmt_list = pp.Forward()  # объявляем
 
-    fun_decl = (FUN + ident + LPAR + RPAR + COLON + type_ + LBRACE + stmt_list + RBRACE).setName('func')
+    return_ << RETURN + expr_or_empty
+
+    empty_as_void = pp.Group(pp.empty).setParseAction(lambda s, loc, tocs: IdentNode('void'))
+    fun_param = ident + COLON + ident
+    #params_ident = (ident + LPAR + pp.Optional(fun_params + pp.ZeroOrMore(COMMA + fun_params)) + RPAR)
+    # название([пар1: тип, ...])[: тип]
+    #func_param = pp.Optional(fun_param + pp.ZeroOrMore(COMMA + fun_param))
+    # fun
+
+    fun_body = stmt_list
+    fun_decl = (FUN + ident + LPAR + pp.Optional(fun_param + pp.ZeroOrMore(COMMA + fun_param))
+                + RPAR + ((COLON + ident) | empty_as_void) + LBRACE + fun_body + RBRACE)
 
     stmt << (
             call |
@@ -110,6 +123,7 @@ def _make_parser():
             var_inner |
             fun_decl |
             while_ |
+            return_ |
             LBRACE + stmt_list + RBRACE |
             CONTINUE |
             BREAK  # добавляем новые операторы
@@ -139,20 +153,6 @@ def _make_parser():
                 return UnOpNode(UnOp(tocs[0]), tocs[1])
 
             parser.setParseAction(un_op_parse_action)
-        elif rule_name == 'func':
-            def func_parse_action(s, loc, tocs):
-                return FunDecl(tocs[1], tocs[2])
-
-            parser.setParseAction(func_parse_action)
-        elif rule_name == 'while':
-            def while_parse_action(s, loc, tocs):
-                condition = tocs[2]
-                body = tocs[4]
-                while condition.eval():
-                    body.execute()
-                return None  # Возвращаем None, так как у while нет значения
-
-            parser.setParseAction(while_parse_action)
         else:
             cls = ''.join(x.capitalize() for x in rule_name.split('_')) + 'Node'
             with suppress(NameError):

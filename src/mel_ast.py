@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Callable, Tuple, Optional, Any
+from typing import Callable, Tuple, Optional, Any, Union
 
 
 class AstNode(ABC):
@@ -78,6 +78,20 @@ class CallNode(ExprNode):
 
     def __str__(self) -> str:
         return 'call'
+
+
+class ReturnNode(ExprNode):
+    def __init__(self, func: IdentNode, *params: ExprNode):
+        super().__init__()
+        self.func = func
+        self.params = params
+
+    @property
+    def childs(self) -> Tuple[IdentNode, ExprNode]:
+        return self.func, *self.params
+
+    def __str__(self) -> str:
+        return 'return'
 
 
 class UnOp(Enum):
@@ -210,6 +224,20 @@ class WhenExprNode(StmtNode):
         return '->'
 
 
+class WhileNode(StmtNode):
+    def __init__(self, cond: ExprNode, *when_expr: WhenExprNode):
+        super().__init__()
+        self.cond = cond
+        self.when_expr = when_expr
+
+    @property
+    def childs(self) -> tuple[ExprNode, Any]:
+        return self.cond, *self.when_expr
+
+    def __str__(self) -> str:
+        return 'while'
+
+
 class WhenNode(StmtNode):
     def __init__(self, cond: ExprNode, *when_expr: WhenExprNode, else_stmt: Optional[StmtNode] = None):
         super().__init__()
@@ -241,29 +269,32 @@ class VarDecl(StmtNode):
         return f'{"val" if self.const else "var"} {self.name}{": " + str(self.type) if self.type else ""}'
 
 
-class ParamNode(AstNode):
-    def __init__(self, name: IdentNode, param_type: IdentNode):
+class FunParamNode(ExprNode):
+    def __init__(self, name: IdentNode, type_: IdentNode):
         super().__init__()
         self.name = name
-        self.param_type = param_type
-
-    def __str__(self) -> str:
-        return f"{self.name}: {self.param_type}"
-
-
-class FunDecl(ExprNode):
-    def __init__(self, name: AstNode, type: IdentNode):
-        super().__init__()
-        self.name = name
-        self.type = type
-        self.param = ParamNode(self.name, self.type)
+        self.type_ = type_
 
     @property
-    def childs(self) -> Tuple[ParamNode]:
-        return (self.param,)
+    def childs(self) -> Tuple[IdentNode, IdentNode]:
+        return self.name, self.type_
 
     def __str__(self) -> str:
-        return 'fun'
+        return f"{self.name}: {self.type_}"
+
+
+class FunParamNode(ExprNode):
+    def __init__(self, name: IdentNode, type_: IdentNode):
+        super().__init__()
+        self.name = name
+        self.type_ = type_
+
+    @property
+    def childs(self) -> Tuple[IdentNode, IdentNode]:
+        return self.name, self.type_
+
+    def __str__(self) -> str:
+        return f"{self.name}: {self.type_}"
 
 
 class StmtListNode(AstNode):
@@ -277,6 +308,35 @@ class StmtListNode(AstNode):
 
     def __str__(self) -> str:
         return '...'
+
+
+class FunBodyNode(AstNode):
+    def __init__(self, *exprs: AstNode):
+        super().__init__()
+        self.exprs = exprs
+
+    @property
+    def childs(self) -> Tuple[AstNode]:
+        return self.exprs
+
+    def __str__(self) -> str:
+        return 'body'
+
+
+class FunDeclNode(ExprNode):
+    def __init__(self, name: IdentNode, *params_and_type_and_body: Union[FunParamNode, IdentNode, StmtListNode]):
+        super().__init__()
+        self.name = name
+        self.params = params_and_type_and_body[:-2]
+        self.return_type = params_and_type_and_body[-2]
+        self.body = params_and_type_and_body[-1]
+
+    @property
+    def childs(self) -> Tuple[FunParamNode, StmtListNode]:
+        return *self.params, self.body
+
+    def __str__(self) -> str:
+        return f'fun {self.name} : {self.return_type} ()'
 
 
 class FunCallWithBodyNode(ExprNode):

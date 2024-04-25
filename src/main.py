@@ -110,10 +110,10 @@ def main():
         c = if (a > b) a else if (a == b) b else d
     """
     prog16 = """
-        fun sum():Int {
-            for(i = 8; i < 9; i = i + 1) {
-                print(i)
-            }
+        fun sum(a: Int, b: Int): Int{
+            print(i);
+            print(b);
+            return a;
         }
         """
     prog17 = """
@@ -125,7 +125,7 @@ def main():
         return result
     }
     """
-    while_check = """
+    prog18 = """
         val x: int = 2;
     while (x > 0) {
         if (x == 5) {
@@ -138,13 +138,104 @@ def main():
         x = x - 1;
     }
     """
-    for_each_check = """
-        each(x in range(5)) {
+    prog19 = """
+        for (x in range(5)) {
             print(x);
         }
     """
+    prog20 = """
+        fun combinedFunction() {
+            var a: int = 2;
+            val b: int = 3 + 6;
+            var c: int = 4;
+            
+            if (a) {
+                b = !!a;
+                print(0);
+                if (b) {
+                    b = 1;
+                }
+            } else if (b) {
+                print(4);
+            } else if (c) {
+                c = b + c;
+            } else {
+                print(c);
+            }
+        }
+        
+        fun combinedFunction2() {
+            val x: int = 2;
+            while (x > 0) {
+                if (x == 5) {
+                    x = x - 1;
+                }
+                x = x - 1;
+            }
+            
+            for (x in range(5)) {
+                print(x);
+            }
+        }
+        
+        fun sum(a: int, b: int) : int {
+            when{
+                (b > 10) -> println(b)
+                (a > 10) -> println(a)
+                else -> println(c)
+            }
+            
+            when(a + b){
+                a -> {
+                    println(b);
+                    print(a);
+                }
+                b -> println(a)
+                a + 5 -> println(a + 5)
+                else -> { a = 3 }
+            }
+            
+            when(a - b) {
+                in 10..12 -> { a = a + 1 }
+                !in 10..12 -> { isEnable = 2 }
+            }
+        }
+        
+        fun myFun(a: int) {
+            c = if (a > b) a else if (a == b) b else d
+        }
+    """
+    prog23 = """
+        fun sum(a: int, b: int) : int {
+            when(a + b){
+                a -> println(b)
+                b -> println(a)
+                a + 5 -> println(a + 5)
+                in 10..12 -> { a = a + 1 }
+                !in 10..12 -> { isEnable = 2 }
+                else -> { a = 3 }
+            }
+        }
+        fun test() {
+            a = 4
+        }
+    """
 
-    prog = mel_parser.parse(while_check)
+    prog21 = """
+        fun sum(a: int) {
+            if (a > 3) {
+                print(1);
+                a = 3;
+            }
+        }
+    """
+
+    prog22 = """
+    fun sum(a: int) {
+        c = if (a > b) a else if (a == b) b else d
+    }
+    """
+    prog = mel_parser.parse(prog23)
     print(*prog.tree, sep=os.linesep)
 
 
