@@ -439,18 +439,29 @@ class FunParamNode(ExprNode):
         return f"{self.name}: {self.type_}"
 
 
-class StmtListNode(AstNode):
-    def __init__(self, *exprs: AstNode):
-        super().__init__()
-        self.exprs = exprs
+class StmtListNode(StmtNode):
+    """Класс для представления в AST-дереве последовательности инструкций
+    """
 
-    @property
-    def childs(self) -> tuple[AstNode, ...]:
-        return self.exprs
+    def __init__(self, *exprs: StmtNode,
+                 row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
+        super().__init__(row=row, col=col, **props)
+        self.exprs = exprs
+        self.program = False
 
     def __str__(self) -> str:
         return '...'
 
+    @property
+    def childs(self) -> Tuple[StmtNode, ...]:
+        return self.exprs
+
+    def semantic_check(self, scope: IdentScope) -> None:
+        if not self.program:
+            scope = IdentScope(scope)
+        for expr in self.exprs:
+            expr.semantic_check(scope)
+        self.node_type = TypeDesc.VOID
 
 class FunBodyNode(AstNode):
     def __init__(self, *exprs: AstNode,

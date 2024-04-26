@@ -174,4 +174,30 @@ parser = _make_parser()
 
 
 def parse(prog: str) -> StmtListNode:
-    return parser.parseString(str(prog))[0]
+    locs = []
+    row, col = 0, 0
+    for ch in prog:
+        if ch == '\n':
+            row += 1
+            col = 0
+        elif ch == '\r':
+            pass
+        else:
+            col += 1
+        locs.append((row, col))
+
+    old_init_action = AstNode.init_action
+
+    def init_action(node: AstNode) -> None:
+        loc = getattr(node, 'loc', None)
+        if isinstance(loc, int):
+            node.row = locs[loc][0] + 1
+            node.col = locs[loc][1] + 1
+
+    AstNode.init_action = init_action
+    try:
+        prog: StmtListNode = parser.parseString(str(prog))[0]
+        prog.program = True
+        return prog
+    finally:
+        AstNode.init_action = old_init_action

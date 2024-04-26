@@ -235,11 +235,14 @@ def main():
     """
     prog22 = """
     fun sum(a: int) {
-        c = if (a > b) a else if (a == b) b else d
+        
     }
+    fun input_int(name: string) {
+            c = if (a > b) a else if (a == b) b else d
+        }
     """
     try:
-        prog = mel_parser.parse(prog5)
+        prog = mel_parser.parse(prog22)
     except Exception as e:
         print('Ошибка: {}'.format(e.message), file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
@@ -250,7 +253,10 @@ def main():
     try:
         checker = SemanticChecker()
         scope = semantic_checker.prepare_global_scope()
+        print(scope.is_global)
+        # prog.semantic_check(scope)
         checker.semantic_check(prog, scope)
+
         print(*prog.tree, sep=os.linesep)
         print()
     except semantic_base.SemanticException as e:
