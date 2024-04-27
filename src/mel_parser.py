@@ -4,7 +4,7 @@ import inspect
 import pyparsing as pp
 from pyparsing import pyparsing_common as ppc
 
-from mel_ast import *
+from src.mel_ast import *
 
 
 def _make_parser():
@@ -144,13 +144,13 @@ def _make_parser():
             def bin_op_parse_action(s, loc, tocs):
                 node = tocs[0]
                 for i in range(1, len(tocs) - 1, 2):
-                    node = BinOpNode(BinOp(tocs[i]), node, tocs[i + 1])
+                    node = BinOpNode(BinOp(tocs[i]), node, tocs[i + 1], loc=loc)
                 return node
 
             parser.setParseAction(bin_op_parse_action)
         elif rule_name == 'unary':
             def un_op_parse_action(s, loc, tocs):
-                return UnOpNode(UnOp(tocs[0]), tocs[1])
+                return UnOpNode(UnOp(tocs[0]), tocs[1], loc=loc)
 
             parser.setParseAction(un_op_parse_action)
         else:
@@ -159,7 +159,7 @@ def _make_parser():
                 cls = eval(cls)
                 if not inspect.isabstract(cls):
                     def parse_action(s, loc, tocs):
-                        return cls(*tocs)
+                        return cls(*tocs, loc=loc)
 
                     parser.setParseAction(parse_action)
 
@@ -190,6 +190,7 @@ def parse(prog: str) -> StmtListNode:
 
     def init_action(node: AstNode) -> None:
         loc = getattr(node, 'loc', None)
+        # print('loc: ', loc)
         if isinstance(loc, int):
             node.row = locs[loc][0] + 1
             node.col = locs[loc][1] + 1

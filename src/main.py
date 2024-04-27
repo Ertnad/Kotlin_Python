@@ -242,7 +242,7 @@ def main():
         }
     """
     try:
-        prog = mel_parser.parse(prog22)
+        prog = mel_parser.parse(prog5)
     except Exception as e:
         print('Ошибка: {}'.format(e.message), file=sys.stderr)
         traceback.print_exc(file=sys.stderr)

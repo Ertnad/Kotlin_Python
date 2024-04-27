@@ -67,7 +67,7 @@ class AstNode(ABC):
         return self.childs[index] if index < len(self.childs) else None
 
 
-class ExprNode(AstNode):
+class ExprNode(AstNode, ABC):
     pass
 
 

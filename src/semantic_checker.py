@@ -3,7 +3,7 @@ from typing import List, Optional
 from src import visitor
 from src.mel_ast import ExprNode, AstNode, IdentNode, BinOpNode, CallNode, AssignNode, ReturnNode, IfNode, WhileNode, \
     ForNode, StmtListNode, EMPTY_IDENT, EMPTY_STMT, LiteralNode, VarsNode, TypeNode, TypeConvertNode, FunDeclNode, \
-    FunParamNode
+    FunParamNode, FunBodyNode
 from src.semantic_base import TypeDesc, TYPE_CONVERTIBILITY, IdentScope, BIN_OP_TYPE_COMPATIBILITY, IdentDesc, \
     SemanticException, ScopeType
 
@@ -52,6 +52,13 @@ class SemanticChecker:
         Нужен для работы модуля visitor (инициализации диспетчера)
         """
         pass
+
+    @visitor.when(FunBodyNode)
+    def semantic_check(self, node: FunBodyNode, scope: IdentScope):
+        """
+        Нужен для работы модуля visitor (инициализации диспетчера)
+        """
+        print('#FunBodyNode')
 
     @visitor.when(LiteralNode)  # декоратор указывает какой именно метод должен быть вызван
     def semantic_check(self, node: LiteralNode, scope: IdentScope):  # передаем узел с которым работаем и обл видимости для потомков
