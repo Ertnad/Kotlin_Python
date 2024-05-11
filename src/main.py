@@ -9,7 +9,8 @@ from src.semantic_checker import SemanticChecker
 
 def main():
     prog1 = '''
-            if (a) {
+        val a : Int = 2
+            if (a == 2) {
                 print(1 + 2);
                 print(0);
                 if (b) {
@@ -226,7 +227,7 @@ def main():
         }
     """
     prog21 = """
-        fun sum(a: int) {
+        fun sum(a: Int) {
             if (a > 3) {
                 print(1);
                 a = 3;
@@ -234,15 +235,22 @@ def main():
         }
     """
     prog22 = """
-    fun sum(a: int) {
-        
+    fun sum(a: Float) {
+        a = 2.3;
     }
-    fun input_int(name: string) {
-            c = if (a > b) a else if (a == b) b else d
+    fun input_int(name: String) {
         }
     """
+    prog23 = """
+        fun sum(a: Int) {
+            if (a > 3) {}
+        }
+        fun input_int(name: String) {
+                c = if (a > b) a else if (a == b) b else d
+            }
+        """
     try:
-        prog = mel_parser.parse(prog5)
+        prog = mel_parser.parse(prog22)
     except Exception as e:
         print('Ошибка: {}'.format(e.message), file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
@@ -253,7 +261,6 @@ def main():
     try:
         checker = SemanticChecker()
         scope = semantic_checker.prepare_global_scope()
-        print(scope.is_global)
         # prog.semantic_check(scope)
         checker.semantic_check(prog, scope)
 

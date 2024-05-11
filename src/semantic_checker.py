@@ -2,18 +2,21 @@ from typing import List, Optional
 
 from src import visitor
 from src.mel_ast import ExprNode, AstNode, IdentNode, BinOpNode, CallNode, AssignNode, ReturnNode, IfNode, WhileNode, \
-    ForNode, StmtListNode, EMPTY_IDENT, EMPTY_STMT, LiteralNode, VarsNode, TypeNode, TypeConvertNode, FunDeclNode, \
-    FunParamNode, FunBodyNode
+    ForNode, StmtListNode, EMPTY_IDENT, EMPTY_STMT, LiteralNode, TypeNode, TypeConvertNode, FunDeclNode, \
+    FunParamNode, VarDecl, NumNode
 from src.semantic_base import TypeDesc, TYPE_CONVERTIBILITY, IdentScope, BIN_OP_TYPE_COMPATIBILITY, IdentDesc, \
     SemanticException, ScopeType
 
 #  встроенные функции
+# BUILT_IN_OBJECTS = '''
+#     fun read() : String { }
+#     fun print(messege : String) { }
+#     fun println(messege : String) { }
+#     fun toInt(p0 : String) { }
+#     fun toFloat(p0 : String) { }
+# '''
 BUILT_IN_OBJECTS = '''
-    fun read() : String { }
-    fun print(messege : String) { } 
-    fun println(messege : String) { } 
-    fun toInt(p0 : String) { }
-    fun toFloat(p0 : String) { }
+    val d: Int = 4
 '''
 
 
@@ -53,13 +56,6 @@ class SemanticChecker:
         """
         pass
 
-    @visitor.when(FunBodyNode)
-    def semantic_check(self, node: FunBodyNode, scope: IdentScope):
-        """
-        Нужен для работы модуля visitor (инициализации диспетчера)
-        """
-        print('#FunBodyNode')
-
     @visitor.when(LiteralNode)  # декоратор указывает какой именно метод должен быть вызван
     def semantic_check(self, node: LiteralNode, scope: IdentScope):  # передаем узел с которым работаем и обл видимости для потомков
         if isinstance(node.value, bool):
@@ -73,6 +69,15 @@ class SemanticChecker:
             node.node_type = TypeDesc.STR
         else:
             node.semantic_error('Неизвестный тип {} для {}'.format(type(node.value), node.value))
+
+    @visitor.when(NumNode)
+    def semantic_check(self, node: NumNode, scope: IdentScope):
+        if isinstance(node.num, int):
+            node.node_type = TypeDesc.INT
+        elif isinstance(node.num, float):
+            node.node_type = TypeDesc.FLOAT
+        else:
+            node.semantic_error('Неизвестный тип {} для {}'.format(type(node.num), node.num))
 
     @visitor.when(IdentNode)  # обращаемся на чтении, не объявлении
     def semantic_check(self, node: IdentNode, scope: IdentScope):
@@ -165,17 +170,32 @@ class SemanticChecker:
         node.val = type_convert(node.val, node.var.node_type, node, 'присваиваемое значение')
         node.node_type = node.var.node_type
 
-    @visitor.when(VarsNode)  # объявление переменной
-    def semantic_check(self, node: VarsNode, scope: IdentScope):
-        node.type.semantic_check(self, scope)
-        for var in node.vars:
-            var_node: IdentNode = var.var if isinstance(var, AssignNode) else var
-            try:
-                scope.add_ident(IdentDesc(var_node.name, node.type.type))
-            except SemanticException as e:
-                var_node.semantic_error(e.message)
+    @visitor.when(VarDecl)
+    def semantic_check(self, node: VarDecl, scope: IdentScope):
+        node.type_.semantic_check(self, scope)
+        node.node_type = node.type_
+        for var in node.childs:
             var.semantic_check(self, scope)
-        node.node_type = TypeDesc.VOID
+
+    # @visitor.when(VarsNode)  # объявление переменной
+    # def semantic_check(self, node: VarsNode, scope: IdentScope):
+    #     node.type.semantic_check(self, scope)
+    #     for var in node.vars:
+    #         var_node: IdentNode = var.var if isinstance(var, AssignNode) else var
+    #         try:
+    #             scope.add_ident(IdentDesc(var_node.name, node.type.type))
+    #         except SemanticException as e:
+    #             var_node.semantic_error(e.message)
+    #         var.semantic_check(self, scope)
+    #     node.node_type = TypeDesc.VOID
+        # var = node.name
+        # var_node: IdentNode = var.var if isinstance(var, AssignNode) else var
+        # try:
+        #     scope.add_ident(IdentDesc(var_node.name, node.type_.node_type))
+        # except SemanticException as e:
+        #     var_node.semantic_error(e.message)
+        # var.semantic_check(self, scope)
+        # node.node_type = TypeDesc.VOID
 
     @visitor.when(ReturnNode)
     def semantic_check(self, node: ReturnNode, scope: IdentScope):
@@ -217,7 +237,7 @@ class SemanticChecker:
     @visitor.when(FunParamNode)
     def semantic_check(self, node: FunParamNode, scope: IdentScope):
         node.type_.semantic_check(self, scope)
-        node.name.node_type = node.type_.type
+        node.name.node_type = node.type_
         try:
             node.name.node_ident = scope.add_ident(IdentDesc(node.name.name, node.type_.type, ScopeType.PARAM))
         except SemanticException:
@@ -239,7 +259,7 @@ class SemanticChecker:
             # при проверке параметров происходит их добавление в scope
             param.semantic_check(self, scope)
             param.node_ident = scope.get_ident(param.name.name)
-            params.append(param.type.type)
+            params.append(param.type_.type)
 
         type_ = TypeDesc(None, node.return_type.type, tuple(params))
         func_ident = IdentDesc(node.name.name, type_)
@@ -249,7 +269,9 @@ class SemanticChecker:
             node.name.node_ident = parent_scope.curr_global.add_ident(func_ident)
         except SemanticException as e:
             node.name.semantic_error("Повторное объявление функции {}".format(node.name.name))
-        node.body.semantic_check(self, scope)
+        for stmt in node.body.stmts:
+            stmt.semantic_check(self, scope)
+        # node.body.semantic_check(self, scope)
         node.node_type = TypeDesc.VOID
 
     @visitor.when(StmtListNode)
@@ -263,7 +285,7 @@ class SemanticChecker:
 
 #  сначала проходим по встроенным функциям -> они появляются в области видимости -> проверяем корректность как обычно
 def prepare_global_scope() -> IdentScope:
-    from mel_parser import parse
+    from src.mel_parser import parse
 
     prog = parse(BUILT_IN_OBJECTS)
     checker = SemanticChecker()
