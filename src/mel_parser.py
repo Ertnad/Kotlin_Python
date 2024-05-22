@@ -49,7 +49,7 @@ def _make_parser():
     return_ = pp.Forward()
     params = pp.Optional(expr + pp.ZeroOrMore(COMMA + expr))
     call = (ident + LPAR + params + RPAR)  # | (ident + LPAR + pp.Optional(ident + COLON + ident) + pp.ZeroOrMore(COMMA + ident + COLON + ident) + RPAR)
-    group = call | ident | num | LPAR + expr + RPAR | in_
+    group = call | ident | int_num | num | LPAR + expr + RPAR | in_
     not_ = pp.Forward().setName('unary')
     not_ << (NOT + (not_ | group))
     not_or_group = not_ | group

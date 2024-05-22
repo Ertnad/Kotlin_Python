@@ -173,9 +173,15 @@ class SemanticChecker:
     @visitor.when(VarDecl)
     def semantic_check(self, node: VarDecl, scope: IdentScope):
         node.type_.semantic_check(self, scope)
+        node.value.semantic_check(self, scope)
         node.node_type = node.type_
+        node.value.node_type = node.node_type
         for var in node.childs:
             var.semantic_check(self, scope)
+        try:
+            node.name.node_ident = scope.add_ident(IdentDesc(node.name.name, node.type_.type))
+        except SemanticException:
+            raise node.name.semantic_error('Переменная {} уже объявлена'.format(node.name.name))
 
     # @visitor.when(VarsNode)  # объявление переменной
     # def semantic_check(self, node: VarsNode, scope: IdentScope):

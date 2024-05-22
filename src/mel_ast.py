@@ -445,12 +445,10 @@ class VarDecl(StmtNode):
 
     def __str__(self) -> str:
         r = ''
-        if self.node_ident:
-            r = str(self.node_ident)
-        elif self.node_type:
+        if self.node_type:
             r = str(self.node_type)
         # return f'{"val" if self.const else "var"} {self.name}' + (' : ' + r if r else '')
-        return f'{"val" if self.const else "var"} {self.name}{": " + str(self.type_) if self.type_ else ""}'
+        return f'{"val" if self.const else "var"} {self.name}{": " + str(self.type_) if self.type_ and r == "" else "" }'
 
 
 class FunParamNode(ExprNode):
@@ -468,7 +466,7 @@ class FunParamNode(ExprNode):
         # return f"{self.name}: {self.type_}"
         r = ''
         if self.name.node_ident:
-            r = str(self.name.node_ident.index)
+            r = str(self.name.node_ident.index + 1)
         return f"fun param " + r
 
 
