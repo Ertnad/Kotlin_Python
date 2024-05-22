@@ -92,7 +92,13 @@ class NumNode(ExprNode):
         self.num = float(num)
 
     def __str__(self) -> str:
-        return str(self.num)
+        r = ''
+        if self.node_ident:
+            r = str(self.node_ident)
+        elif self.node_type:
+            r = str(self.node_type)
+        return str(self.num) + (' : ' + r if r else '')
+        # return str(self.num)
 
 
 class IntNumNode(ExprNode):
@@ -101,7 +107,13 @@ class IntNumNode(ExprNode):
         self.num = int(num)
 
     def __str__(self) -> str:
-        return str(self.num)
+        r = ''
+        if self.node_ident:
+            r = str(self.node_ident)
+        elif self.node_type:
+            r = str(self.node_type)
+        return str(self.num) + (' : ' + r if r else '')
+        # return str(self.num)
 
 
 class IdentNode(ExprNode):
@@ -110,7 +122,13 @@ class IdentNode(ExprNode):
         self.name = str(name)
 
     def __str__(self) -> str:
-        return str(self.name)
+        r = ''
+        if self.node_ident:
+            r = str(self.node_ident)
+        elif self.node_type:
+            r = str(self.node_type)
+        return str(self.name) + (' : ' + r if r else '')
+        # return str(self.name)
 
 
 class TypeNode(IdentNode):
@@ -288,7 +306,12 @@ class AssignNode(StmtNode):
         self.val = val
 
     def __str__(self) -> str:
-        return '='
+        r = ''
+        if self.node_ident:
+            r = str(self.node_ident)
+        elif self.node_type:
+            r = str(self.node_type)
+        return '=' + (' : ' + r if r else '')
 
     @property
     def childs(self) -> Tuple[IdentNode, ExprNode]:
@@ -421,6 +444,12 @@ class VarDecl(StmtNode):
         return (self.value,) if self.value else ()
 
     def __str__(self) -> str:
+        r = ''
+        if self.node_ident:
+            r = str(self.node_ident)
+        elif self.node_type:
+            r = str(self.node_type)
+        # return f'{"val" if self.const else "var"} {self.name}' + (' : ' + r if r else '')
         return f'{"val" if self.const else "var"} {self.name}{": " + str(self.type_) if self.type_ else ""}'
 
 
@@ -436,7 +465,11 @@ class FunParamNode(ExprNode):
         return self.name, self.type_
 
     def __str__(self) -> str:
-        return f"{self.name}: {self.type_}"
+        # return f"{self.name}: {self.type_}"
+        r = ''
+        if self.name.node_ident:
+            r = str(self.name.node_ident.index)
+        return f"fun param " + r
 
 
 class StmtListNode(StmtNode):
@@ -500,7 +533,10 @@ class FunDeclNode(ExprNode):
         return *self.params, self.body
 
     def __str__(self) -> str:
-        return f'fun {self.name} : {self.return_type} ()'
+        r = ''
+        if self.name.node_type:
+            r = str(self.name.node_type)
+        return f'fun {self.name}' + ('' if r else f' : {self.return_type} ()')
 
 
 class FunCallWithBodyNode(ExprNode):
@@ -514,7 +550,12 @@ class FunCallWithBodyNode(ExprNode):
         return self.func, self.body
 
     def __str__(self) -> str:
-        return f'call'
+        r = ''
+        if self.node_ident:
+            r = str(self.node_ident)
+        elif self.node_type:
+            r = str(self.node_type)
+        return f'call' + ' : ' + r if r else ''
 
 
 class ContinueNode(StmtNode):

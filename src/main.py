@@ -51,7 +51,8 @@ def main():
             }
         """
     prog5 = """
-        val a: Int = 1
+        val a: Int = 1;
+        var a: Int = 1;
     """
     prog15 = """
         var a: Int = 1
@@ -234,12 +235,14 @@ def main():
             }
         }
     """
+    #var c = a + b + 2.3;
     prog22 = """
-    fun sum(a: Float) {
+    fun sum(a: Float, b: Float) {
         a = 2.3;
     }
-    fun input_int(name: String) {
-        }
+    fun printMyString(name: String) {
+        print(name);
+    }
     """
     prog23 = """
         fun sum(a: Int) {
@@ -250,7 +253,7 @@ def main():
             }
         """
     try:
-        prog = mel_parser.parse(prog22)
+        prog = mel_parser.parse(prog5)
     except Exception as e:
         print('Ошибка: {}'.format(e.message), file=sys.stderr)
         traceback.print_exc(file=sys.stderr)

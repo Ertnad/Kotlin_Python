@@ -8,16 +8,16 @@ from src.semantic_base import TypeDesc, TYPE_CONVERTIBILITY, IdentScope, BIN_OP_
     SemanticException, ScopeType
 
 #  встроенные функции
-# BUILT_IN_OBJECTS = '''
-#     fun read() : String { }
-#     fun print(messege : String) { }
-#     fun println(messege : String) { }
-#     fun toInt(p0 : String) { }
-#     fun toFloat(p0 : String) { }
-# '''
 BUILT_IN_OBJECTS = '''
-    val d: Int = 4
+    fun read() : String { }
+    fun print(messege : String) { }
+    fun println(messege : String) { }
+    fun toInt(p0 : String) { }
+    fun toFloat(p0 : String) { }
 '''
+# BUILT_IN_OBJECTS = '''
+#     val d: Int = 4
+# '''
 
 
 def type_convert(expr: ExprNode, type_: TypeDesc, except_node: Optional[AstNode] = None, comment: Optional[str] = None) -> ExprNode:
@@ -266,7 +266,7 @@ class SemanticChecker:
         scope.func = func_ident
         node.name.node_type = type_
         try:
-            node.name.node_ident = parent_scope.curr_global.add_ident(func_ident)
+            node.name.node_ident = parent_scope.curr_global.add_ident(func_ident)  # добавляем идентификатор функции в глобальные переменные
         except SemanticException as e:
             node.name.semantic_error("Повторное объявление функции {}".format(node.name.name))
         for stmt in node.body.stmts:
