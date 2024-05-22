@@ -296,7 +296,6 @@ class BinOpNode(ExprNode):
         elif self.node_type:
             r = str(self.node_type)
         return str(self.op.value) + (' : ' + r if r else '')
-        # return str(self.op.value)
 
 
 class StmtNode(AstNode):

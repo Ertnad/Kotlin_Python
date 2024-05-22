@@ -237,12 +237,18 @@ def main():
     """
     #var c = a + b + 2.3;
     prog22 = """
-    fun sum(a: Float, b: Float) {
-        var c: Int = 1;
+    fun sum(a: Float, b: Float, d: Int) {
+        var c: Float = 1;
         a = c;
         if (a > 3) {
             print(1);
             a = 3;
+            
+            for(var i: Float = 8; i < 9; i = i + 1) {
+                print(i)
+            }
+            
+            c = if (a > b) a else if (a == b) b else d
         }
     }
     fun printMyString(name: String) {

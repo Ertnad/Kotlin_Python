@@ -226,7 +226,8 @@ class SemanticChecker:
         node.then_stmt.semantic_check(self, IdentScope(scope))
         if node.else_stmt:
             node.else_stmt.semantic_check(self, IdentScope(scope))
-        node.node_type = TypeDesc.VOID
+        node.node_type = node.then_stmt.node_type
+        # node.node_type = TypeDesc.VOID
 
     @visitor.when(WhileNode)
     def semantic_check(self, node: WhileNode, scope: IdentScope):
