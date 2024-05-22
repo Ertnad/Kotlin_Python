@@ -240,11 +240,19 @@ def main():
     fun sum(a: Float, b: Float) {
         var c: Int = 1;
         a = c;
+        if (a > 3) {
+            print(1);
+            a = 3;
+        }
     }
     fun printMyString(name: String) {
         print(name);
     }
     """
+    prog23 = """
+        fun sum(a: Int, b: Float) {
+        }
+        """
     prog23 = """
         fun sum(a: Int) {
             if (a > 3) {}

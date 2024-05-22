@@ -3,7 +3,7 @@ from contextlib import suppress
 from enum import Enum
 from typing import Callable, Tuple, Optional, Any, Union
 
-from src.semantic_base import IdentDesc, TypeDesc, SemanticException, IdentScope, TYPE_CONVERTIBILITY
+from src.semantic_base import IdentDesc, TypeDesc, SemanticException, IdentScope, TYPE_CONVERTIBILITY, BinOp
 
 
 class AstNode(ABC):
@@ -243,19 +243,19 @@ class UnOp(Enum):
     NOT = '!'
 
 
-class BinOp(Enum):
-    ADD = '+'
-    SUB = '-'
-    MUL = '*'
-    DIV = '/'
-    GE = '>='
-    LE = '<='
-    GT = '>'
-    LT = '<'
-    EQUALS = '=='
-    NOTEQUALS = '!='
-    LOGIC_AND = '&&'
-    LOGIC_OR = '||'
+# class BinOp(Enum):
+#     ADD = '+'
+#     SUB = '-'
+#     MUL = '*'
+#     DIV = '/'
+#     GE = '>='
+#     LE = '<='
+#     GT = '>'
+#     LT = '<'
+#     EQUALS = '=='
+#     NOTEQUALS = '!='
+#     LOGIC_AND = '&&'
+#     LOGIC_OR = '||'
 
 
 class Op(Enum):
@@ -290,7 +290,13 @@ class BinOpNode(ExprNode):
         return self.arg1, self.arg2
 
     def __str__(self) -> str:
-        return str(self.op.value)
+        r = ''
+        if self.node_ident:
+            r = str(self.node_ident)
+        elif self.node_type:
+            r = str(self.node_type)
+        return str(self.op.value) + (' : ' + r if r else '')
+        # return str(self.op.value)
 
 
 class StmtNode(AstNode):
@@ -487,12 +493,12 @@ class StmtListNode(StmtNode):
     def childs(self) -> Tuple[StmtNode, ...]:
         return self.stmts
 
-    def semantic_check(self, scope: IdentScope) -> None:
-        if not self.program:
-            scope = IdentScope(scope)
-        for expr in self.stmts:
-            expr.semantic_check(scope)
-        self.node_type = TypeDesc.VOID
+    # def semantic_check(self, scope: IdentScope) -> None:
+    #     if not self.program:
+    #         scope = IdentScope(scope)
+    #     for expr in self.stmts:
+    #         expr.semantic_check(scope)
+    #     self.node_type = TypeDesc.VOID
 
 
 # class FunBodyNode(AstNode):

@@ -3,7 +3,7 @@ from typing import List, Optional
 from src import visitor
 from src.mel_ast import ExprNode, AstNode, IdentNode, BinOpNode, CallNode, AssignNode, ReturnNode, IfNode, WhileNode, \
     ForNode, StmtListNode, EMPTY_IDENT, EMPTY_STMT, LiteralNode, TypeNode, TypeConvertNode, FunDeclNode, \
-    FunParamNode, VarDecl, NumNode
+    FunParamNode, VarDecl, NumNode, IntNumNode
 from src.semantic_base import TypeDesc, TYPE_CONVERTIBILITY, IdentScope, BIN_OP_TYPE_COMPATIBILITY, IdentDesc, \
     SemanticException, ScopeType
 
@@ -69,6 +69,13 @@ class SemanticChecker:
             node.node_type = TypeDesc.STR
         else:
             node.semantic_error('Неизвестный тип {} для {}'.format(type(node.value), node.value))
+
+    @visitor.when(IntNumNode)
+    def semantic_check(self, node: IntNumNode, scope: IdentScope):
+        if isinstance(node.num, int):
+            node.node_type = TypeDesc.INT
+        else:
+            node.semantic_error('Неизвестный тип {} для {}'.format(type(node.num), node.num))
 
     @visitor.when(NumNode)
     def semantic_check(self, node: NumNode, scope: IdentScope):

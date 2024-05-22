@@ -277,8 +277,9 @@ BIN_OP_TYPE_COMPATIBILITY = {
         (INT, INT): INT,
         (FLOAT, FLOAT): FLOAT
     },
-
     BinOp.GT: {
+        (INT, FLOAT): BOOL,
+        (FLOAT, INT): BOOL,
         (INT, INT): BOOL,
         (FLOAT, FLOAT): BOOL,
         (STR, STR): BOOL,
