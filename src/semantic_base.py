@@ -27,6 +27,20 @@ class BinOp(Enum):
         return self.value
 
 
+class UnOp(Enum):
+    NOT = '!'
+
+    def __str__(self):
+        return self.value
+
+
+class InOp(Enum):
+    IN = 'in'
+
+    def __str__(self):
+        return self.value
+
+
 class BaseType(Enum):
     """Перечисление для базовых типов данных
     """
@@ -278,8 +292,6 @@ BIN_OP_TYPE_COMPATIBILITY = {
         (FLOAT, FLOAT): FLOAT
     },
     BinOp.GT: {
-        (INT, FLOAT): BOOL,
-        (FLOAT, INT): BOOL,
         (INT, INT): BOOL,
         (FLOAT, FLOAT): BOOL,
         (STR, STR): BOOL,
@@ -325,4 +337,19 @@ BIN_OP_TYPE_COMPATIBILITY = {
     BinOp.LOGICAL_OR: {
         (BOOL, BOOL): BOOL,
     },
+}
+
+UN_OP_TYPE_COMPATIBILITY = {
+    UnOp.NOT: {
+        BOOL: BOOL
+    },
+}
+
+IN_OP_TYPE_COMPATIBILITY = {
+    InOp.IN: {
+        (INT, INT): BOOL,
+        (FLOAT, FLOAT): BOOL,
+        (STR, STR): BOOL,
+        (BOOL, BOOL): BOOL,
+    }
 }

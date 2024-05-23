@@ -212,19 +212,23 @@ def main():
             c = if (a > b) a else if (a == b) b else d
         }
     """
-    prog23 = """
-        fun sum(a: int, b: int) : int {
+    prog30 = """
+        fun sum(a: Int, b: Int) : Int {
             when(a + b){
                 a -> println(b)
                 b -> println(a)
                 a + 5 -> println(a + 5)
                 in 10..12 -> { a = a + 1 }
-                !in 10..12 -> { isEnable = 2 }
+                !in 10..12 -> { a = 2 }
                 else -> { a = 3 }
             }
-        }
-        fun test() {
-            a = 4
+            var x: Int = 2;
+            while (x > 0) {
+                if (x == 5) {
+                    x = x - 1;
+                }
+                x = x - 1;
+            }
         }
     """
     prog21 = """
@@ -268,7 +272,7 @@ def main():
             }
         """
     try:
-        prog = mel_parser.parse(prog22)
+        prog = mel_parser.parse(prog30)
     except Exception as e:
         print('Ошибка: {}'.format(e.message), file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
