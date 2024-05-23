@@ -217,8 +217,7 @@ class SemanticChecker:
         decl_params_str = fact_params_str = ''
         for i in range(len(node.params)):
             param: ExprNode = node.params[i]
-            param.semantic_check(self,
-                                 scope)  # проверяется параметр на корректность, т.к. это фактический параметр, то тут может быть и выражение, и ф-ция
+            param.semantic_check(self, scope)  # проверяется параметр на корректность, т.к. это фактический параметр, то тут может быть и выражение, и ф-ция
             if len(decl_params_str) > 0:
                 decl_params_str += ', '
             decl_params_str += str(func.type.params[i])
@@ -309,10 +308,8 @@ class SemanticChecker:
     @visitor.when(WhenExprNode)
     def semantic_check(self, node: WhenExprNode, scope: IdentScope):
         node.cond.semantic_check(self, scope)
-        # node.cond = type_convert(node.cond, TypeDesc.BOOL, None, 'условие')
         node.then_stmt.semantic_check(self, IdentScope(scope))
         node.node_type = node.then_stmt.node_type
-        # node.node_type = TypeDesc.VOID
 
     @visitor.when(WhenNode)
     def semantic_check(self, node: WhenNode, scope: IdentScope):

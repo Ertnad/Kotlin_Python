@@ -223,19 +223,18 @@ def type_convert(expr: ExprNode, type_: TypeDesc, except_node: Optional[AstNode]
         ))
 
 
-class ReturnNode(ExprNode):
-    def __init__(self, func: IdentNode, *params: ExprNode, row: Optional[int] = None, col: Optional[int] = None,
-                 **props) -> None:
-        super().__init__(row=row, col=col, **props)
-        self.func = func
-        self.params = params
-
-    @property
-    def childs(self) -> Tuple[IdentNode, ExprNode]:
-        return self.func, *self.params
-
-    def __str__(self) -> str:
-        return 'return'
+# class ReturnNode(ExprNode):
+#     def __init__(self, *params: ExprNode, row: Optional[int] = None, col: Optional[int] = None,
+#                  **props) -> None:
+#         super().__init__(row=row, col=col, **props)
+#         self.params = params
+#
+#     @property
+#     def childs(self) -> Tuple[IdentNode, ExprNode]:
+#         return *self.params, ...
+#
+#     def __str__(self) -> str:
+#         return 'return'
 
 
 # class UnOp(Enum):
@@ -567,6 +566,23 @@ class FunCallWithBodyNode(ExprNode):
         elif self.node_type:
             r = str(self.node_type)
         return f'call' + ' : ' + r if r else ''
+
+
+class ReturnNode(StmtNode):
+    """Класс для представления в AST-дереве оператора return
+    """
+
+    def __init__(self, val: ExprNode,
+                 row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
+        super().__init__(row=row, col=col, **props)
+        self.val = val
+
+    def __str__(self) -> str:
+        return 'return'
+
+    @property
+    def childs(self) -> Tuple[ExprNode]:
+        return (self.val, )
 
 
 class ContinueNode(StmtNode):

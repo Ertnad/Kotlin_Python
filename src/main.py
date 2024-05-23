@@ -213,7 +213,7 @@ def main():
         }
     """
     prog30 = """
-        fun sum(a: Int, b: Int) : Int {
+        fun sum(a: Int, b: Float) : Int {
             when(a + b){
                 a -> println(b)
                 b -> println(a)
@@ -222,6 +222,9 @@ def main():
                 !in 10..12 -> { a = 2 }
                 else -> { a = 3 }
             }
+            for(var i: Float = 8; i < 9; i = i + 1) {
+                print(i)
+            }
             var x: Int = 2;
             while (x > 0) {
                 if (x == 5) {
@@ -229,6 +232,7 @@ def main():
                 }
                 x = x - 1;
             }
+            return x;
         }
     """
     prog21 = """
