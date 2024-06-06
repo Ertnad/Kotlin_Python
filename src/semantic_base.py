@@ -27,24 +27,11 @@ class BinOp(Enum):
         return self.value
 
 
-class UnOp(Enum):
-    NOT = '!'
-
-    def __str__(self):
-        return self.value
-
-
-class InOp(Enum):
-    IN = 'in'
-
-    def __str__(self):
-        return self.value
-
-
 class BaseType(Enum):
     """Перечисление для базовых типов данных
     """
 
+    ARRAY = 'Array'
     VOID = 'void'
     INT = 'Int'
     FLOAT = 'Float'
@@ -70,12 +57,16 @@ class TypeDesc:
     FLOAT: 'TypeDesc'
     BOOL: 'TypeDesc'
     STR: 'TypeDesc'
+    ARRAY: 'TypeDesc'
 
-    def __init__(self, base_type_: Optional[BaseType] = None,
-                 return_type: Optional['TypeDesc'] = None, params: Optional[Tuple['TypeDesc']] = None) -> None:
+    def __init__(self, base_type_: Optional['BaseType'] = None,
+                 return_type: Optional['TypeDesc'] = None,
+                 params: Optional[Tuple['TypeDesc']] = None,
+                 element_type: Optional['TypeDesc'] = None) -> None:
         self.base_type = base_type_
         self.return_type = return_type
         self.params = params
+        self.element_type = element_type
 
     @property
     def func(self) -> bool:
@@ -83,28 +74,32 @@ class TypeDesc:
 
     @property
     def is_simple(self) -> bool:
-        return not self.func
+        return not self.func and self.element_type is None
+
+    def is_array(self) -> bool:
+        return self.element_type is not None
 
     # Проверка на равенство типов при сравнении
     def __eq__(self, other: 'TypeDesc'):
-        # если относительно друг друга разные
         if self.func != other.func:
             return False
-        if not self.func:  # если не функция, то проверяем, совпадают ли базовые типы
-            return self.base_type == other.base_type
-        else:  # если функция
-            if self.return_type != other.return_type:  # совпадают ли возвращаемые типы
+        if not self.func:
+            return self.base_type == other.base_type and self.element_type == other.element_type
+        else:
+            if self.return_type != other.return_type:
                 return False
-            if len(self.params) != len(other.params):  # совпадает ли количество параметров
+            if len(self.params) != len(other.params):
                 return False
             for i in range(len(self.params)):
-                if self.params[i] != other.params[i]:  # рекурсивно проверяются параметры
+                if self.params[i] != other.params[i]:
                     return False
             return True
 
     #  получает 'TypeDesc' из базового типа по имени
     @staticmethod
     def from_base_type(base_type_: BaseType) -> 'TypeDesc':
+        if base_type_ == BaseType.ARRAY:
+            return TypeDesc.ARRAY
         return getattr(TypeDesc, base_type_.name)
 
     #  получает 'TypeDesc' из строки
@@ -118,6 +113,8 @@ class TypeDesc:
 
     #  представляем определение типа в виде строки
     def __str__(self) -> str:
+        if self.is_array:
+            return f'{str(self.element_type)}[]'
         if not self.func:
             return str(self.base_type)
         else:
@@ -208,7 +205,8 @@ class IdentScope:
                 if old_ident.scope == ScopeType.PARAM:  # найденный тоже параметр
                     error = True
             elif ident.scope == ScopeType.LOCAL:  # если добавляется локальная переменная
-                if old_ident.scope not in (ScopeType.GLOBAL, ScopeType.GLOBAL_LOCAL):  # найденная не была глобальной или глобально-локальной
+                if old_ident.scope not in (
+                ScopeType.GLOBAL, ScopeType.GLOBAL_LOCAL):  # найденная не была глобальной или глобально-локальной
                     error = True
             else:  # пытаемся объявить глобальную/глобально-локальную переменную, а такая уже есть
                 error = True
@@ -291,6 +289,7 @@ BIN_OP_TYPE_COMPATIBILITY = {
         (INT, INT): INT,
         (FLOAT, FLOAT): FLOAT
     },
+
     BinOp.GT: {
         (INT, INT): BOOL,
         (FLOAT, FLOAT): BOOL,
@@ -337,19 +336,4 @@ BIN_OP_TYPE_COMPATIBILITY = {
     BinOp.LOGICAL_OR: {
         (BOOL, BOOL): BOOL,
     },
-}
-
-UN_OP_TYPE_COMPATIBILITY = {
-    UnOp.NOT: {
-        BOOL: BOOL
-    },
-}
-
-IN_OP_TYPE_COMPATIBILITY = {
-    InOp.IN: {
-        (INT, INT): BOOL,
-        (FLOAT, FLOAT): BOOL,
-        (STR, STR): BOOL,
-        (BOOL, BOOL): BOOL,
-    }
 }

@@ -9,8 +9,7 @@ from src.semantic_checker import SemanticChecker
 
 def main():
     prog1 = '''
-        val a : Int = 2
-            if (a == 2) {
+            if (a) {
                 print(1 + 2);
                 print(0);
                 if (b) {
@@ -51,8 +50,7 @@ def main():
             }
         """
     prog5 = """
-        val a: Int = 1;
-        var b: Int = 1;
+        val a: Int = 1
     """
     prog15 = """
         var a: Int = 1
@@ -212,73 +210,46 @@ def main():
             c = if (a > b) a else if (a == b) b else d
         }
     """
-    prog30 = """
-        fun sum(a: Int, b: Float) : Int {
+    prog23 = """
+        fun sum(a: int, b: int) : int {
             when(a + b){
                 a -> println(b)
                 b -> println(a)
                 a + 5 -> println(a + 5)
                 in 10..12 -> { a = a + 1 }
-                !in 10..12 -> { a = 2 }
+                !in 10..12 -> { isEnable = 2 }
                 else -> { a = 3 }
             }
-            for(var i: Float = 8; i < 9; i = i + 1) {
-                print(i)
-            }
-            var x: Int = 2;
-            while (x > 0) {
-                if (x == 5) {
-                    x = x - 1;
-                }
-                x = x - 1;
-            }
-            return x;
+        }
+        fun test() {
+            a = 4
         }
     """
     prog21 = """
-        fun sum(a: Int) {
+        fun sum(a: int) {
             if (a > 3) {
                 print(1);
                 a = 3;
             }
         }
     """
-    #var c = a + b + 2.3;
     prog22 = """
-    fun sum(a: Float, b: Float, d: Int) {
-        var c: Float = 1;
-        a = c;
-        if (a > 3) {
-            print(1);
-            a = 3;
-            
-            for(var i: Float = 8; i < 9; i = i + 1) {
-                print(i)
-            }
-            
+    fun sum(a: int) {
+        
+    }
+    fun input_int(name: string) {
             c = if (a > b) a else if (a == b) b else d
         }
-    }
-    fun printMyString(name: String) {
-        print(name);
-    }
     """
-    prog23 = """
-        fun sum(a: Int, b: Float) {
-        }
+
+    prog24 = """
+        val a: Array[Int] = arrayOf(1, 2, 3)
         """
-    prog23 = """
-        fun sum(a: Int) {
-            if (a > 3) {}
-        }
-        fun input_int(name: String) {
-                c = if (a > b) a else if (a == b) b else d
-            }
-        """
+
     try:
-        prog = mel_parser.parse(prog30)
+        prog = mel_parser.parse(prog22)
     except Exception as e:
-        print('Ошибка: {}'.format(e.message), file=sys.stderr)
+        print('Ошибка: {}'.format(e.msg), file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
         exit(1)
     print(*prog.tree, sep=os.linesep)
@@ -287,6 +258,7 @@ def main():
     try:
         checker = SemanticChecker()
         scope = semantic_checker.prepare_global_scope()
+        print(scope.is_global)
         # prog.semantic_check(scope)
         checker.semantic_check(prog, scope)
 

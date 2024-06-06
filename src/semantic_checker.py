@@ -2,28 +2,22 @@ from typing import List, Optional
 
 from src import visitor
 from src.mel_ast import ExprNode, AstNode, IdentNode, BinOpNode, CallNode, AssignNode, ReturnNode, IfNode, WhileNode, \
-    ForNode, StmtListNode, EMPTY_IDENT, EMPTY_STMT, LiteralNode, TypeNode, TypeConvertNode, FunDeclNode, \
-    FunParamNode, VarDecl, NumNode, IntNumNode, WhenNode, WhenExprNode, UnOpNode, InNode
+    ForNode, StmtListNode, EMPTY_IDENT, EMPTY_STMT, LiteralNode, VarsNode, TypeNode, TypeConvertNode, FunDeclNode, \
+    FunParamNode, FunBodyNode, ArrayAccessNode, ArrayLiteralNode
 from src.semantic_base import TypeDesc, TYPE_CONVERTIBILITY, IdentScope, BIN_OP_TYPE_COMPATIBILITY, IdentDesc, \
-    SemanticException, ScopeType, UN_OP_TYPE_COMPATIBILITY, IN_OP_TYPE_COMPATIBILITY
+    SemanticException, ScopeType, BaseType
 
 #  встроенные функции
 BUILT_IN_OBJECTS = '''
     fun read() : String { }
-    fun print(messege : String) { }
-    fun println(messege : String) { }
+    fun print(messege : String) { } 
+    fun println(messege : String) { } 
     fun toInt(p0 : String) { }
     fun toFloat(p0 : String) { }
 '''
 
 
-# BUILT_IN_OBJECTS = '''
-#     val d: Int = 4
-# '''
-
-
-def type_convert(expr: ExprNode, type_: TypeDesc, except_node: Optional[AstNode] = None,
-                 comment: Optional[str] = None) -> ExprNode:
+def type_convert(expr: ExprNode, type_: TypeDesc, except_node: Optional[AstNode] = None, comment: Optional[str] = None) -> ExprNode:
     """Метод преобразования ExprNode узла AST-дерева к другому типу
     :param expr: узел AST-дерева
     :param type_: требуемый тип
@@ -37,8 +31,7 @@ def type_convert(expr: ExprNode, type_: TypeDesc, except_node: Optional[AstNode]
     if expr.node_type == type_:
         return expr
     if expr.node_type.is_simple and type_.is_simple and \
-            expr.node_type.base_type in TYPE_CONVERTIBILITY and type_.base_type in TYPE_CONVERTIBILITY[
-        expr.node_type.base_type]:
+            expr.node_type.base_type in TYPE_CONVERTIBILITY and type_.base_type in TYPE_CONVERTIBILITY[expr.node_type.base_type]:
         return TypeConvertNode(expr, type_)
     else:
         (except_node if except_node else expr).semantic_error('Тип {0}{2} не конвертируется в {1}'.format(
@@ -60,9 +53,15 @@ class SemanticChecker:
         """
         pass
 
+    @visitor.when(FunBodyNode)
+    def semantic_check(self, node: FunBodyNode, scope: IdentScope):
+        """
+        Нужен для работы модуля visitor (инициализации диспетчера)
+        """
+        print('#FunBodyNode')
+
     @visitor.when(LiteralNode)  # декоратор указывает какой именно метод должен быть вызван
-    def semantic_check(self, node: LiteralNode,
-                       scope: IdentScope):  # передаем узел с которым работаем и обл видимости для потомков
+    def semantic_check(self, node: LiteralNode, scope: IdentScope):  # передаем узел с которым работаем и обл видимости для потомков
         if isinstance(node.value, bool):
             node.node_type = TypeDesc.BOOL
         # проверка должна быть позже bool, т.к. bool наследник от int
@@ -74,22 +73,6 @@ class SemanticChecker:
             node.node_type = TypeDesc.STR
         else:
             node.semantic_error('Неизвестный тип {} для {}'.format(type(node.value), node.value))
-
-    @visitor.when(IntNumNode)
-    def semantic_check(self, node: IntNumNode, scope: IdentScope):
-        if isinstance(node.num, int):
-            node.node_type = TypeDesc.INT
-        else:
-            node.semantic_error('Неизвестный тип {} для {}'.format(type(node.num), node.num))
-
-    @visitor.when(NumNode)
-    def semantic_check(self, node: NumNode, scope: IdentScope):
-        if isinstance(node.num, int):
-            node.node_type = TypeDesc.INT
-        elif isinstance(node.num, float):
-            node.node_type = TypeDesc.FLOAT
-        else:
-            node.semantic_error('Неизвестный тип {} для {}'.format(type(node.num), node.num))
 
     @visitor.when(IdentNode)  # обращаемся на чтении, не объявлении
     def semantic_check(self, node: IdentNode, scope: IdentScope):
@@ -137,69 +120,31 @@ class SemanticChecker:
             node.op, node.arg1.node_type, node.arg2.node_type
         ))
 
-    @visitor.when(InNode)
-    def semantic_check(self, node: InNode, scope: IdentScope):
-        node.arg1.semantic_check(self, scope)
-        node.arg2.semantic_check(self, scope)
+    @visitor.when(ArrayAccessNode)
+    def semantic_check(self, node: ArrayAccessNode, scope: IdentScope):
+        node.array.semantic_check(self, scope)
+        node.index.semantic_check(self, scope)
 
-        if node.arg1.node_type.is_simple or node.arg2.node_type.is_simple:
-            compatibility = IN_OP_TYPE_COMPATIBILITY[node.op]
-            args_types = (node.arg1.node_type.base_type, node.arg2.node_type.base_type)
-            if args_types in compatibility:
-                node.node_type = TypeDesc.from_base_type(compatibility[args_types])
-                return
+        if not node.array.node_type.is_array:
+            node.semantic_error('Объект не является массивом')
 
-            #  подбираем возможность конвертировать второй аргумент к первому
-            if node.arg2.node_type.base_type in TYPE_CONVERTIBILITY:
-                for arg2_type in TYPE_CONVERTIBILITY[node.arg2.node_type.base_type]:
-                    args_types = (node.arg1.node_type.base_type, arg2_type)
-                    if args_types in compatibility:
-                        node.arg2 = type_convert(node.arg2, TypeDesc.from_base_type(arg2_type))
-                        node.node_type = TypeDesc.from_base_type(compatibility[args_types])
-                        return
-            #  первый ко второму
-            if node.arg1.node_type.base_type in TYPE_CONVERTIBILITY:
-                for arg1_type in TYPE_CONVERTIBILITY[node.arg1.node_type.base_type]:
-                    args_types = (arg1_type, node.arg2.node_type.base_type)
-                    if args_types in compatibility:
-                        node.arg1 = type_convert(node.arg1, TypeDesc.from_base_type(arg1_type))
-                        node.node_type = TypeDesc.from_base_type(compatibility[args_types])
-                        return
+        if node.index.node_type != TypeDesc.INT:
+            node.semantic_error('Индекс массива должен быть целым числом')
 
-        node.semantic_error("Оператор {} не применим к типам ({}, {})".format(
-            node.op, node.arg1.node_type, node.arg2.node_type
-        ))
+        node.node_type = node.array.node_type.element_type
 
-    @visitor.when(UnOpNode)
-    def semantic_check(self, node: UnOpNode, scope: IdentScope):
-        node.arg1.semantic_check(self, scope)
+    @visitor.when(ArrayLiteralNode)
+    def semantic_check(self, node: ArrayLiteralNode, scope: IdentScope):
+        element_type = None
+        for element in node.elements:
+            element.semantic_check(self, scope)
+            if element_type is None:
+                element_type = element.node_type
+            elif element.node_type != element_type:
+                node.semantic_error('Все элементы массива должны быть одного типа')
 
-        compatibility = UN_OP_TYPE_COMPATIBILITY[node.op]
-        args_types = node.arg1.node_type.base_type
-        if args_types in compatibility:
-            node.node_type = TypeDesc.from_base_type(compatibility[args_types])
-            return
+        node.node_type = TypeDesc(base_type_= BaseType.ARRAY, element_type=element_type)
 
-        #  подбираем возможность конвертировать второй аргумент к первому
-        if node.arg2.node_type.base_type in TYPE_CONVERTIBILITY:
-            for arg2_type in TYPE_CONVERTIBILITY[node.arg2.node_type.base_type]:
-                args_types = (node.arg1.node_type.base_type, arg2_type)
-                if args_types in compatibility:
-                    node.arg2 = type_convert(node.arg2, TypeDesc.from_base_type(arg2_type))
-                    node.node_type = TypeDesc.from_base_type(compatibility[args_types])
-                    return
-        #  первый ко второму
-        if node.arg1.node_type.base_type in TYPE_CONVERTIBILITY:
-            for arg1_type in TYPE_CONVERTIBILITY[node.arg1.node_type.base_type]:
-                args_types = (arg1_type, node.arg2.node_type.base_type)
-                if args_types in compatibility:
-                    node.arg1 = type_convert(node.arg1, TypeDesc.from_base_type(arg1_type))
-                    node.node_type = TypeDesc.from_base_type(compatibility[args_types])
-                    return
-
-        node.semantic_error("Оператор {} не применим к типам ({}, {})".format(
-            node.op, node.arg1.node_type, node.arg2.node_type
-        ))
 
     @visitor.when(CallNode)
     def semantic_check(self, node: CallNode, scope: IdentScope):
@@ -230,7 +175,7 @@ class SemanticChecker:
                 error = True
         if error:
             node.semantic_error('Фактические типы ({1}) аргументов функции {0} не совпадают с формальными ({2})\
-                                                и не приводимы'.format(
+                                            и не приводимы'.format(
                 func.name, fact_params_str, decl_params_str
             ))
         else:
@@ -246,38 +191,17 @@ class SemanticChecker:
         node.val = type_convert(node.val, node.var.node_type, node, 'присваиваемое значение')
         node.node_type = node.var.node_type
 
-    @visitor.when(VarDecl)
-    def semantic_check(self, node: VarDecl, scope: IdentScope):
-        node.type_.semantic_check(self, scope)
-        node.value.semantic_check(self, scope)
-        node.node_type = node.type_
-        node.value.node_type = node.node_type
-        for var in node.childs:
+    @visitor.when(VarsNode)  # объявление переменной
+    def semantic_check(self, node: VarsNode, scope: IdentScope):
+        node.type.semantic_check(self, scope)
+        for var in node.vars:
+            var_node: IdentNode = var.var if isinstance(var, AssignNode) else var
+            try:
+                scope.add_ident(IdentDesc(var_node.name, node.type.type))
+            except SemanticException as e:
+                var_node.semantic_error(e.message)
             var.semantic_check(self, scope)
-        try:
-            node.name.node_ident = scope.add_ident(IdentDesc(node.name.name, node.type_.type))
-        except SemanticException:
-            raise node.name.semantic_error('Переменная {} уже объявлена'.format(node.name.name))
-
-    # @visitor.when(VarsNode)  # объявление переменной
-    # def semantic_check(self, node: VarsNode, scope: IdentScope):
-    #     node.type.semantic_check(self, scope)
-    #     for var in node.vars:
-    #         var_node: IdentNode = var.var if isinstance(var, AssignNode) else var
-    #         try:
-    #             scope.add_ident(IdentDesc(var_node.name, node.type.type))
-    #         except SemanticException as e:
-    #             var_node.semantic_error(e.message)
-    #         var.semantic_check(self, scope)
-    #     node.node_type = TypeDesc.VOID
-    # var = node.name
-    # var_node: IdentNode = var.var if isinstance(var, AssignNode) else var
-    # try:
-    #     scope.add_ident(IdentDesc(var_node.name, node.type_.node_type))
-    # except SemanticException as e:
-    #     var_node.semantic_error(e.message)
-    # var.semantic_check(self, scope)
-    # node.node_type = TypeDesc.VOID
+        node.node_type = TypeDesc.VOID
 
     @visitor.when(ReturnNode)
     def semantic_check(self, node: ReturnNode, scope: IdentScope):
@@ -295,32 +219,13 @@ class SemanticChecker:
         node.then_stmt.semantic_check(self, IdentScope(scope))
         if node.else_stmt:
             node.else_stmt.semantic_check(self, IdentScope(scope))
-        node.node_type = node.then_stmt.node_type
-        # node.node_type = TypeDesc.VOID
+        node.node_type = TypeDesc.VOID
 
     @visitor.when(WhileNode)
     def semantic_check(self, node: WhileNode, scope: IdentScope):
         node.cond.semantic_check(self, scope)
         node.cond = type_convert(node.cond, TypeDesc.BOOL, None, 'условие')
-        node.then_stmt.semantic_check(self, IdentScope(scope))
-        node.node_type = TypeDesc.VOID
-
-    @visitor.when(WhenExprNode)
-    def semantic_check(self, node: WhenExprNode, scope: IdentScope):
-        node.cond.semantic_check(self, scope)
-        node.then_stmt.semantic_check(self, IdentScope(scope))
-        node.node_type = node.then_stmt.node_type
-
-    @visitor.when(WhenNode)
-    def semantic_check(self, node: WhenNode, scope: IdentScope):
-        node.cond.semantic_check(self, scope)
-        # node.cond = type_convert(node.cond, TypeDesc.BOOL, None, 'условие')
-        for var in node.when_expr:
-            var.semantic_check(self, scope)
-        # node.when_expr.semantic_check(self, IdentScope(scope))
-        if node.else_stmt:
-            node.else_stmt.semantic_check(self, IdentScope(scope))
-        # node.node_type = node.when_expr.node_type
+        node.body.semantic_check(self, IdentScope(scope))
         node.node_type = TypeDesc.VOID
 
     @visitor.when(ForNode)
@@ -338,7 +243,7 @@ class SemanticChecker:
     @visitor.when(FunParamNode)
     def semantic_check(self, node: FunParamNode, scope: IdentScope):
         node.type_.semantic_check(self, scope)
-        node.name.node_type = node.type_
+        node.name.node_type = node.type_.type
         try:
             node.name.node_ident = scope.add_ident(IdentDesc(node.name.name, node.type_.type, ScopeType.PARAM))
         except SemanticException:
@@ -348,8 +253,7 @@ class SemanticChecker:
     @visitor.when(FunDeclNode)
     def semantic_check(self, node: FunDeclNode, scope: IdentScope):
         if scope.curr_func:
-            node.semantic_error(
-                "Объявление функции ({}) внутри другой функции не поддерживается".format(node.name.name))
+            node.semantic_error("Объявление функции ({}) внутри другой функции не поддерживается".format(node.name.name))
         parent_scope = scope
         node.return_type.semantic_check(self, scope)
         scope = IdentScope(scope)
@@ -361,20 +265,17 @@ class SemanticChecker:
             # при проверке параметров происходит их добавление в scope
             param.semantic_check(self, scope)
             param.node_ident = scope.get_ident(param.name.name)
-            params.append(param.type_.type)
+            params.append(param.type.type)
 
         type_ = TypeDesc(None, node.return_type.type, tuple(params))
         func_ident = IdentDesc(node.name.name, type_)
         scope.func = func_ident
         node.name.node_type = type_
         try:
-            node.name.node_ident = parent_scope.curr_global.add_ident(
-                func_ident)  # добавляем идентификатор функции в глобальные переменные
+            node.name.node_ident = parent_scope.curr_global.add_ident(func_ident)
         except SemanticException as e:
             node.name.semantic_error("Повторное объявление функции {}".format(node.name.name))
-        for stmt in node.body.stmts:
-            stmt.semantic_check(self, scope)
-        # node.body.semantic_check(self, scope)
+        node.body.semantic_check(self, scope)
         node.node_type = TypeDesc.VOID
 
     @visitor.when(StmtListNode)
@@ -387,9 +288,8 @@ class SemanticChecker:
 
 
 #  сначала проходим по встроенным функциям -> они появляются в области видимости -> проверяем корректность как обычно
-
 def prepare_global_scope() -> IdentScope:
-    from src.mel_parser import parse
+    from mel_parser import parse
 
     prog = parse(BUILT_IN_OBJECTS)
     checker = SemanticChecker()

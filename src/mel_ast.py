@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 from contextlib import suppress
+from enum import Enum
 from typing import Callable, Tuple, Optional, Any, Union
+from typing import List
 
-from src.semantic_base import IdentDesc, TypeDesc, SemanticException, IdentScope, TYPE_CONVERTIBILITY, BinOp, UnOp, InOp
+from src.semantic_base import IdentDesc, TypeDesc, SemanticException, IdentScope, TYPE_CONVERTIBILITY
 
 
 class AstNode(ABC):
@@ -91,13 +93,7 @@ class NumNode(ExprNode):
         self.num = float(num)
 
     def __str__(self) -> str:
-        r = ''
-        if self.node_ident:
-            r = str(self.node_ident)
-        elif self.node_type:
-            r = str(self.node_type)
-        return str(self.num) + (' : ' + r if r else '')
-        # return str(self.num)
+        return str(self.num)
 
 
 class IntNumNode(ExprNode):
@@ -106,13 +102,7 @@ class IntNumNode(ExprNode):
         self.num = int(num)
 
     def __str__(self) -> str:
-        r = ''
-        if self.node_ident:
-            r = str(self.node_ident)
-        elif self.node_type:
-            r = str(self.node_type)
-        return str(self.num) + (' : ' + r if r else '')
-        # return str(self.num)
+        return str(self.num)
 
 
 class IdentNode(ExprNode):
@@ -121,13 +111,7 @@ class IdentNode(ExprNode):
         self.name = str(name)
 
     def __str__(self) -> str:
-        r = ''
-        if self.node_ident:
-            r = str(self.node_ident)
-        elif self.node_type:
-            r = str(self.node_type)
-        return str(self.name) + (' : ' + r if r else '')
-        # return str(self.name)
+        return str(self.name)
 
 
 class TypeNode(IdentNode):
@@ -223,41 +207,42 @@ def type_convert(expr: ExprNode, type_: TypeDesc, except_node: Optional[AstNode]
         ))
 
 
-# class ReturnNode(ExprNode):
-#     def __init__(self, *params: ExprNode, row: Optional[int] = None, col: Optional[int] = None,
-#                  **props) -> None:
-#         super().__init__(row=row, col=col, **props)
-#         self.params = params
-#
-#     @property
-#     def childs(self) -> Tuple[IdentNode, ExprNode]:
-#         return *self.params, ...
-#
-#     def __str__(self) -> str:
-#         return 'return'
+class ReturnNode(ExprNode):
+    def __init__(self, func: IdentNode, *params: ExprNode, row: Optional[int] = None, col: Optional[int] = None,
+                 **props) -> None:
+        super().__init__(row=row, col=col, **props)
+        self.func = func
+        self.params = params
+
+    @property
+    def childs(self) -> Tuple[IdentNode, ExprNode]:
+        return self.func, *self.params
+
+    def __str__(self) -> str:
+        return 'return'
 
 
-# class UnOp(Enum):
-#     NOT = '!'
+class UnOp(Enum):
+    NOT = '!'
 
 
-# class BinOp(Enum):
-#     ADD = '+'
-#     SUB = '-'
-#     MUL = '*'
-#     DIV = '/'
-#     GE = '>='
-#     LE = '<='
-#     GT = '>'
-#     LT = '<'
-#     EQUALS = '=='
-#     NOTEQUALS = '!='
-#     LOGIC_AND = '&&'
-#     LOGIC_OR = '||'
+class BinOp(Enum):
+    ADD = '+'
+    SUB = '-'
+    MUL = '*'
+    DIV = '/'
+    GE = '>='
+    LE = '<='
+    GT = '>'
+    LT = '<'
+    EQUALS = '=='
+    NOTEQUALS = '!='
+    LOGIC_AND = '&&'
+    LOGIC_OR = '||'
 
 
-# class Op(Enum):
-#     IN = 'in'
+class Op(Enum):
+    IN = 'in'
 
 
 class UnOpNode(ExprNode):
@@ -272,10 +257,7 @@ class UnOpNode(ExprNode):
         return self.arg1,
 
     def __str__(self) -> str:
-        r = ''
-        if self.node_type:
-            r = str(self.node_type)
-        return str(self.op.value) + (' : ' + r if r else '')
+        return str(self.op.value)
 
 
 class BinOpNode(ExprNode):
@@ -291,12 +273,7 @@ class BinOpNode(ExprNode):
         return self.arg1, self.arg2
 
     def __str__(self) -> str:
-        r = ''
-        if self.node_ident:
-            r = str(self.node_ident)
-        elif self.node_type:
-            r = str(self.node_type)
-        return str(self.op.value) + (' : ' + r if r else '')
+        return str(self.op.value)
 
 
 class StmtNode(AstNode):
@@ -312,34 +289,68 @@ class AssignNode(StmtNode):
         self.val = val
 
     def __str__(self) -> str:
-        r = ''
-        if self.node_ident:
-            r = str(self.node_ident)
-        elif self.node_type:
-            r = str(self.node_type)
-        return '=' + (' : ' + r if r else '')
+        return '='
 
     @property
     def childs(self) -> Tuple[IdentNode, ExprNode]:
         return self.var, self.val
 
 
-# class VarsNode(StmtNode):
-#     """Класс для представления в AST-дереве объявления переменнных
-#     """
-#
-#     def __init__(self, type_: TypeNode, *vars_: Union[IdentNode, 'AssignNode'],
-#                  row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
-#         super().__init__(row=row, col=col, **props)
-#         self.type = type_
-#         self.vars = vars_
-#
-#     def __str__(self) -> str:
-#         return str(self.type)
-#
-#     @property
-#     def childs(self) -> Tuple[AstNode, ...]:
-#         return self.vars
+class ParamNode(StmtNode):
+    """Класс для представления в AST-дереве объявления параметра функции
+    """
+
+    def __init__(self, type_: TypeNode, name: IdentNode,
+                 row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
+        super().__init__(row=row, col=col, **props)
+        self.type = type_
+        self.name = name
+
+    def __str__(self) -> str:
+        return str(self.type)
+
+    @property
+    def childs(self) -> Tuple[IdentNode]:
+        return self.name,
+
+class FuncNode(StmtNode):
+    """Класс для представления в AST-дереве объявления функции
+    """
+
+    def __init__(self, type_: TypeNode, name: IdentNode, params: Tuple[ParamNode], body: StmtNode,
+                 row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
+        super().__init__(row=row, col=col, **props)
+        self.type = type_
+        self.name = name
+        self.params = params
+        self.body = body
+
+    def __str__(self) -> str:
+        return 'function'
+
+    @property
+    def childs(self) -> Tuple[AstNode, ...]:
+        return _GroupNode(str(self.type), self.name), _GroupNode('params', *self.params), self.body
+
+
+
+
+class VarsNode(StmtNode):
+    """Класс для представления в AST-дереве объявления переменнных
+    """
+
+    def __init__(self, type_: TypeNode, *vars_: Union[IdentNode, 'AssignNode'],
+                 row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
+        super().__init__(row=row, col=col, **props)
+        self.type = type_
+        self.vars = vars_
+
+    def __str__(self) -> str:
+        return str(self.type)
+
+    @property
+    def childs(self) -> Tuple[AstNode, ...]:
+        return self.vars
 
 
 class IfNode(StmtNode):
@@ -379,7 +390,6 @@ class InNode(ExprNode):
     def __init__(self, arg1: IntNumNode, arg2: IntNumNode,
                  row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
         super().__init__(row=row, col=col, **props)
-        self.op = InOp.IN
         self.arg1 = arg1
         self.arg2 = arg2
 
@@ -388,12 +398,7 @@ class InNode(ExprNode):
         return self.arg1, self.arg2
 
     def __str__(self) -> str:
-        r = ''
-        if self.node_ident:
-            r = str(self.node_ident)
-        elif self.node_type:
-            r = str(self.node_type)
-        return 'in' + (' : ' + r if r else '')
+        return 'in'
 
 
 class WhenExprNode(StmtNode):
@@ -409,6 +414,21 @@ class WhenExprNode(StmtNode):
 
     def __str__(self) -> str:
         return '->'
+
+
+class WhileNode(StmtNode):
+    def __init__(self, cond: ExprNode, *when_expr: WhenExprNode,
+                 row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
+        super().__init__(row=row, col=col, **props)
+        self.cond = cond
+        self.when_expr = when_expr
+
+    @property
+    def childs(self) -> tuple[ExprNode, Any]:
+        return self.cond, *self.when_expr
+
+    def __str__(self) -> str:
+        return 'while'
 
 
 class WhenNode(StmtNode):
@@ -441,11 +461,7 @@ class VarDecl(StmtNode):
         return (self.value,) if self.value else ()
 
     def __str__(self) -> str:
-        r = ''
-        if self.node_type:
-            r = str(self.node_type)
-        # return f'{"val" if self.const else "var"} {self.name}' + (' : ' + r if r else '')
-        return f'{"val" if self.const else "var"} {self.name}{": " + str(self.type_) if self.type_ and r == "" else "" }'
+        return f'{"val" if self.const else "var"} {self.name}{": " + str(self.type_) if self.type_ else ""}'
 
 
 class FunParamNode(ExprNode):
@@ -460,21 +476,17 @@ class FunParamNode(ExprNode):
         return self.name, self.type_
 
     def __str__(self) -> str:
-        # return f"{self.name}: {self.type_}"
-        r = ''
-        if self.name.node_ident:
-            r = str(self.name.node_ident.index + 1)
-        return f"fun param " + r
+        return f"{self.name}: {self.type_}"
 
 
 class StmtListNode(StmtNode):
     """Класс для представления в AST-дереве последовательности инструкций
     """
 
-    def __init__(self, *stmts: StmtNode,
+    def __init__(self, *exprs: StmtNode,
                  row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
         super().__init__(row=row, col=col, **props)
-        self.stmts = stmts
+        self.exprs = exprs
         self.program = False
 
     def __str__(self) -> str:
@@ -482,51 +494,27 @@ class StmtListNode(StmtNode):
 
     @property
     def childs(self) -> Tuple[StmtNode, ...]:
-        return self.stmts
+        return self.exprs
 
-    # def semantic_check(self, scope: IdentScope) -> None:
-    #     if not self.program:
-    #         scope = IdentScope(scope)
-    #     for expr in self.stmts:
-    #         expr.semantic_check(scope)
-    #     self.node_type = TypeDesc.VOID
+    def semantic_check(self, scope: IdentScope) -> None:
+        if not self.program:
+            scope = IdentScope(scope)
+        for expr in self.exprs:
+            expr.semantic_check(scope)
+        self.node_type = TypeDesc.VOID
 
-
-# class FunBodyNode(AstNode):
-#     def __init__(self, *exprs: AstNode,
-#                  row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
-#         super().__init__(row=row, col=col, **props)
-#         self.exprs = exprs
-#         self.program = False
-#
-#     @property
-#     def childs(self) -> tuple[AstNode, ...]:
-#         return self.exprs
-#
-#     def __str__(self) -> str:
-#         return '...'
-#
-#     def semantic_check(self, scope: IdentScope) -> None:
-#         if not self.program:
-#             scope = IdentScope(scope)
-#         for expr in self.exprs:
-#             expr.semantic_check(scope)
-#         self.node_type = TypeDesc.VOID
-
-
-class WhileNode(StmtNode):
-    def __init__(self, cond: ExprNode, then_stmt: StmtNode,
+class FunBodyNode(AstNode):
+    def __init__(self, *exprs: AstNode,
                  row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
         super().__init__(row=row, col=col, **props)
-        self.cond = cond
-        self.then_stmt = then_stmt
+        self.exprs = exprs
 
     @property
-    def childs(self) -> tuple[ExprNode, Any]:
-        return self.cond, self.then_stmt
+    def childs(self) -> tuple[AstNode, ...]:
+        return self.exprs
 
     def __str__(self) -> str:
-        return 'while'
+        return '...'
 
 
 class FunDeclNode(ExprNode):
@@ -543,10 +531,7 @@ class FunDeclNode(ExprNode):
         return *self.params, self.body
 
     def __str__(self) -> str:
-        r = ''
-        if self.name.node_type:
-            r = str(self.name.node_type)
-        return f'fun {self.name}' + ('' if r else f' : {self.return_type} ()')
+        return f'fun {self.name} : {self.return_type} ()'
 
 
 class FunCallWithBodyNode(ExprNode):
@@ -560,29 +545,7 @@ class FunCallWithBodyNode(ExprNode):
         return self.func, self.body
 
     def __str__(self) -> str:
-        r = ''
-        if self.node_ident:
-            r = str(self.node_ident)
-        elif self.node_type:
-            r = str(self.node_type)
-        return f'call' + ' : ' + r if r else ''
-
-
-class ReturnNode(StmtNode):
-    """Класс для представления в AST-дереве оператора return
-    """
-
-    def __init__(self, val: ExprNode,
-                 row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
-        super().__init__(row=row, col=col, **props)
-        self.val = val
-
-    def __str__(self) -> str:
-        return 'return'
-
-    @property
-    def childs(self) -> Tuple[ExprNode]:
-        return (self.val, )
+        return f'call'
 
 
 class ContinueNode(StmtNode):
@@ -593,6 +556,23 @@ class ContinueNode(StmtNode):
 class BreakNode(StmtNode):
     def __str__(self) -> str:
         return 'break'
+
+
+class ArrayAccessNode(ExprNode):
+    def __init__(self, array: ExprNode, index: ExprNode):
+        self.array = array
+        self.index = index
+        self.node_type = None
+
+class ArrayLiteralNode(ExprNode):
+    def __init__(self, elements: List[ExprNode]):
+        self.elements = elements
+        self.node_type = None
+
+    def __str__(self):
+        # Здесь вы можете вернуть строковое представление узла массива, например:
+        return f"ArrayLiteralNode({self.elements})"
+
 
 
 EMPTY_STMT = StmtListNode()
