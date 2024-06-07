@@ -480,21 +480,27 @@ class FunParamNode(ExprNode):
 
 
 class StmtListNode(StmtNode):
-    """Класс для представления в AST-дереве последовательности инструкций
-    """
+    """Класс для представления в AST-дереве последовательности инструкций"""
 
     def __init__(self, *exprs: StmtNode,
                  row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
         super().__init__(row=row, col=col, **props)
         self.exprs = exprs
+        self.stmts = exprs
+        self._childs = exprs
         self.program = False
+
+    @property
+    def childs(self):
+        return self._childs
+
+    @childs.setter
+    def childs(self, value):
+        self._childs = value
 
     def __str__(self) -> str:
         return '...'
 
-    @property
-    def childs(self) -> Tuple[StmtNode, ...]:
-        return self.exprs
 
     def semantic_check(self, scope: IdentScope) -> None:
         if not self.program:

@@ -4,7 +4,9 @@ import traceback
 
 import mel_parser
 from src import semantic_checker, semantic_base
+from src.mel_ast import StmtListNode
 from src.semantic_checker import SemanticChecker
+from src import msil
 
 
 def main():
@@ -267,6 +269,30 @@ def main():
     except semantic_base.SemanticException as e:
         print('Ошибка: {}'.format(e.message), file=sys.stderr)
         exit(2)
+
+    try:
+        print('msil:')
+        gen = msil.MsilCodeGenerator()
+
+        # Отладочные сообщения
+        print(f"Тип объекта prog: {type(prog)}")
+        print(f"Атрибуты объекта prog: {dir(prog)}")
+        print(f"Содержимое prog.__dict__: {prog.__dict__}")
+
+        # Отладка содержимого exprs
+        for expr in prog.exprs:
+            print(f"Тип узла в exprs: {type(expr)}")
+            print(f"Содержимое узла: {expr}")
+
+        # Создание StmtListNode из exprs
+        stmt_list_node = StmtListNode(*prog.exprs, row=prog.row, col=prog.col)
+
+        # Передача StmtListNode в gen_program
+        gen.gen_program(stmt_list_node)
+        print(*gen.code, sep=os.linesep)
+    except (msil.MsilException, Exception) as e:
+        print(f'Ошибка: {str(e)}', file=sys.stderr)
+        exit(3)
 
 
 if __name__ == "__main__":
