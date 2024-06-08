@@ -3,7 +3,7 @@ import sys
 import traceback
 
 import mel_parser
-from src import semantic_checker, semantic_base
+from src import semantic_checker, semantic_base, msil
 from src.semantic_checker import SemanticChecker
 
 
@@ -57,16 +57,10 @@ def main():
     prog15 = """
         var a: Int = 1
     """
-    prog6 = """
-            for(i = 8; i < 9; i = i + 1) {
-                print(i)
-            }
-        """
     prog7 = """
-                for(; i < 9;) {
-                    print(i)
-                    i = i + 1
-                }
+        for(var i: Int = 8; i < 9; i = i + 1) {
+            print(i)
+        }
             """
     prog8 = """
             a = 5 + 6
@@ -94,6 +88,7 @@ def main():
         }
     """
     prog11 = """
+        var a: Int = 1;
         if (a > 3) {
             print(1);
             a = 3;
@@ -222,7 +217,7 @@ def main():
                 !in 10..12 -> { a = 2 }
                 else -> { a = 3 }
             }
-            for(var i: Float = 8; i < 9; i = i + 1) {
+            for(var i: Int = 8; i < 9; i = i + 1) {
                 print(i)
             }
             var x: Int = 2;
@@ -267,7 +262,7 @@ def main():
         fun sum(a: Int, b: Float) {
         }
         """
-    prog23 = """
+    prog24 = """
         fun sum(a: Int) {
             if (a > 3) {}
         }
@@ -276,7 +271,7 @@ def main():
             }
         """
     try:
-        prog = mel_parser.parse(prog30)
+        prog = mel_parser.parse(prog7)
     except Exception as e:
         print('Ошибка: {}'.format(e.message), file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
@@ -295,6 +290,15 @@ def main():
     except semantic_base.SemanticException as e:
         print('Ошибка: {}'.format(e.message), file=sys.stderr)
         exit(2)
+
+    print("msil:")
+    try:
+        gen = msil.MsilCodeGenerator()
+        gen.gen_program(prog)
+        print(*gen.code, sep=os.linesep)
+    except msil.MsilException or Exception as e:
+        print('Ошибка: {}'.format(e.message), file=sys.stderr)
+        exit(3)
 
 
 if __name__ == "__main__":

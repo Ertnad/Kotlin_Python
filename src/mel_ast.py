@@ -62,6 +62,12 @@ class AstNode(ABC):
     def semantic_check(self, checker, scope: IdentScope) -> None:
         checker.semantic_check(self, scope)
 
+    """Чтобы среда не "ругалась" в модуле msil
+        """
+
+    def msil_gen(self, generator) -> None:
+        generator.msil_gen(self)
+
     def __getitem__(self, index):
         return self.childs[index] if index < len(self.childs) else None
 
