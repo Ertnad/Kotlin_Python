@@ -27,7 +27,7 @@ def _make_parser():
     WHILE = pp.Keyword('while').suppress()
     WHEN = pp.Keyword('when').suppress()
     FOR = pp.Keyword('for').suppress()
-    # EACH = pp.Keyword('each').suppress()
+    #EACH = pp.Keyword('each').suppress()
     IN = pp.Keyword('in').suppress()
     CONTINUE = pp.Keyword('continue').suppress()
     BREAK = pp.Keyword('break').suppress()
@@ -48,8 +48,8 @@ def _make_parser():
     expr = pp.Forward()
     return_ = pp.Forward()
     params = pp.Optional(expr + pp.ZeroOrMore(COMMA + expr))
-    call = (ident + LPAR + params + RPAR)  # | (ident + LPAR + pp.Optional(ident + COLON + ident) + pp.ZeroOrMore(COMMA + ident + COLON + ident) + RPAR)
-    group = call | ident | int_num | num | LPAR + expr + RPAR | in_
+    call = (ident + LPAR + params + RPAR) #| (ident + LPAR + pp.Optional(ident + COLON + ident) + pp.ZeroOrMore(COMMA + ident + COLON + ident) + RPAR)
+    group = call | ident | num | LPAR + expr + RPAR | in_
     not_ = pp.Forward().setName('unary')
     not_ << (NOT + (not_ | group))
     not_or_group = not_ | group
@@ -72,8 +72,7 @@ def _make_parser():
         const = str(tocs[0]) == 'val'
         return VarDecl(const, tocs[1], tocs[2], tocs[3]) if len(tocs) == 4 else VarDecl(const, tocs[1], tocs[2], None)
 
-    # var_inner = ((VAR | VAL) + ident + COLON.suppress() + ident + pp.Optional(ASSIGN.suppress() + expr)).setParseAction(var_inner_parse_action)
-    var_inner = ((VAR | VAL) + ident + COLON.suppress() + type_ + pp.Optional(ASSIGN.suppress() + expr)).setParseAction(
+    var_inner = ((VAR | VAL) + ident + COLON.suppress() + ident + pp.Optional(ASSIGN.suppress() + expr)).setParseAction(
         var_inner_parse_action)
 
     if_ = pp.Forward()
@@ -103,16 +102,16 @@ def _make_parser():
 
     return_ << RETURN + expr_or_empty
 
-    empty_as_void = pp.Group(pp.empty).setParseAction(lambda s, loc, tocs: TypeNode('void'))
-    fun_param = ident + COLON + type_
-    # params_ident = (ident + LPAR + pp.Optional(fun_params + pp.ZeroOrMore(COMMA + fun_params)) + RPAR)
+    empty_as_void = pp.Group(pp.empty).setParseAction(lambda s, loc, tocs: IdentNode('void'))
+    fun_param = ident + COLON + ident
+    #params_ident = (ident + LPAR + pp.Optional(fun_params + pp.ZeroOrMore(COMMA + fun_params)) + RPAR)
     # название([пар1: тип, ...])[: тип]
-    # func_param = pp.Optional(fun_param + pp.ZeroOrMore(COMMA + fun_param))
+    #func_param = pp.Optional(fun_param + pp.ZeroOrMore(COMMA + fun_param))
     # fun
 
     fun_body = stmt_list
     fun_decl = (FUN + ident + LPAR + pp.Optional(fun_param + pp.ZeroOrMore(COMMA + fun_param))
-                + RPAR + ((COLON + type_) | empty_as_void) + LBRACE + fun_body + RBRACE)
+                + RPAR + ((COLON + ident) | empty_as_void) + LBRACE + fun_body + RBRACE)
 
     stmt << (
             call |
@@ -188,6 +187,33 @@ def parse(prog: str) -> StmtListNode:
         locs.append((row, col))
 
     old_init_action = AstNode.init_action
+
+    def parse_expression(tokens):
+        if tokens.peek() == '[':
+            tokens.expect('[')
+            elements = []
+            while tokens.peek() != ']':
+                elements.append(parse_expression(tokens))
+                if tokens.peek() == ',':
+                    tokens.next()
+            tokens.expect(']')
+            return ArrayLiteralNode(elements)
+        else:
+            # Если первый токен не "[", то это может быть выражение или что-то другое.
+            # Возвращаем результат разбора выражения.
+            return parse_statement(tokens)  # Заменяем на parse_statement
+
+    def parse_statement(tokens):
+        if tokens.peek() == 'for':
+            tokens.expect('for')
+            init = parse_statement(tokens)
+            cond = parse_expression(tokens)
+            if tokens.peek() == ';':
+                tokens.expect(';')
+                cond = EMPTY_STMT
+            step = parse_statement(tokens)
+            body = parse_statement(tokens)
+            return ForNode(init, cond, step, body)
 
     def init_action(node: AstNode) -> None:
         loc = getattr(node, 'loc', None)
