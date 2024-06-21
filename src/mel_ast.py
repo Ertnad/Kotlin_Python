@@ -450,7 +450,6 @@ class VarDecl(StmtNode):
         r = ''
         if self.node_type:
             r = str(self.node_type)
-        # return f'{"val" if self.const else "var"} {self.name}' + (' : ' + r if r else '')
         return f'{"val" if self.const else "var"} {self.name}{": " + str(self.type_) if self.type_ and r == "" else "" }'
 
 
@@ -489,13 +488,6 @@ class StmtListNode(StmtNode):
     @property
     def childs(self) -> Tuple[StmtNode, ...]:
         return self.stmts
-
-    # def semantic_check(self, scope: IdentScope) -> None:
-    #     if not self.program:
-    #         scope = IdentScope(scope)
-    #     for expr in self.stmts:
-    #         expr.semantic_check(scope)
-    #     self.node_type = TypeDesc.VOID
 
 
 # class FunBodyNode(AstNode):

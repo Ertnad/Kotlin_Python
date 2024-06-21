@@ -1,0 +1,9 @@
+val a : Int = 2
+if (a == 2) {
+    print(1 + 2);
+    print(0);
+    val b: Int = a;
+    if (b) {
+        b = 1;
+    }
+}

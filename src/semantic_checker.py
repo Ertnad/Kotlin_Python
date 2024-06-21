@@ -10,8 +10,8 @@ from src.semantic_base import TypeDesc, TYPE_CONVERTIBILITY, IdentScope, BIN_OP_
 #  встроенные функции
 BUILT_IN_OBJECTS = '''
     fun read() : String { }
-    fun print(messege : String) { }
-    fun println(messege : String) { }
+    fun print(p0 : String) { }
+    fun println(p0 : String) { }
     fun toInt(p0 : String) { }
     fun toFloat(p0 : String) { }
 '''
@@ -395,7 +395,6 @@ def prepare_global_scope() -> IdentScope:
     checker = SemanticChecker()
     scope = IdentScope()
     checker.semantic_check(prog, scope)
-    # prog.semantic_check(scope)
     for name, ident in scope.idents.items():
         ident.built_in = True
     scope.var_index = 0

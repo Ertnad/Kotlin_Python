@@ -3,9 +3,8 @@ from typing import List, Union, Any
 from src import visitor
 from src.semantic_base import BaseType, TypeDesc, ScopeType, BinOp
 from src.mel_ast import AstNode, LiteralNode, IdentNode, BinOpNode, TypeConvertNode, CallNode, \
-    VarDecl, AssignNode, ReturnNode, IfNode, ForNode, StmtListNode, WhileNode, FunDeclNode
+    VarDecl, AssignNode, ReturnNode, IfNode, ForNode, StmtListNode, WhileNode, FunDeclNode, IntNumNode, NumNode
 from src.code_gen_base import CodeLabel, CodeLine, CodeGenerator, find_vars_decls, DEFAULT_TYPE_VALUES
-
 
 RUNTIME_CLASS_NAME = 'CompilerDemo.Runtime'
 PROGRAM_CLASS_NAME = 'Program'
@@ -65,6 +64,14 @@ class MsilCodeGenerator(CodeGenerator):
     def msil_gen(self, node: LiteralNode) -> None:
         self.push_const(node.node_type.base_type, node.value)
 
+    @visitor.when(NumNode)
+    def msil_gen(self, node: NumNode) -> None:
+        self.add('ldc.r8', str(node.num))
+
+    @visitor.when(IntNumNode)
+    def msil_gen(self, node: IntNumNode) -> None:
+        self.add('ldc.i4', node.num)
+
     @visitor.when(IdentNode)
     def msil_gen(self, node: IdentNode) -> None:
         if node.node_ident.scope == ScopeType.LOCAL:
@@ -72,30 +79,43 @@ class MsilCodeGenerator(CodeGenerator):
         elif node.node_ident.scope == ScopeType.PARAM:
             self.add('ldarg', node.node_ident.index)
         elif node.node_ident.scope in (ScopeType.GLOBAL, ScopeType.GLOBAL_LOCAL):
-            self.add(f'ldsfld {MSIL_TYPE_NAMES[node.node_ident.type.base_type]} {PROGRAM_CLASS_NAME}::_gv{node.node_ident.index}')
+            self.add(
+                f'ldsfld {MSIL_TYPE_NAMES[node.node_ident.type.base_type]} {PROGRAM_CLASS_NAME}::_gv{node.node_ident.index}')
 
     @visitor.when(AssignNode)
     def msil_gen(self, node: AssignNode) -> None:
-        node.val.msil_gen(self)
+        node.val.msil_gen(self)  # рекурсивное вычисление правой части
         var = node.var
         if var.node_ident.scope == ScopeType.LOCAL:
-            self.add('stloc', var.node_ident.index)
+            self.add('stloc',
+                     var.node_ident.index)  # берет значение из верхушки стека и сохраняет его в локальную переменную
         elif var.node_ident.scope == ScopeType.PARAM:
-            self.add('starg', var.node_ident.index)
+            self.add('starg', var.node_ident.index)  # сохраняет значение в слот для аргумента
         elif var.node_ident.scope in (ScopeType.GLOBAL, ScopeType.GLOBAL_LOCAL):
             self.add(f'stsfld {MSIL_TYPE_NAMES[var.node_ident.type.base_type]} Program::_gv{var.node_ident.index}')
 
     @visitor.when(VarDecl)
     def msil_gen(self, node: VarDecl) -> None:
-        if isinstance(node, AssignNode):
-            node.msil_gen(self)
+        if node.value is not None:
+            node.value.msil_gen(self)  # рекурсивное вычисление правой части
+            var = node.name
+            if var.node_ident.scope == ScopeType.LOCAL:
+                self.add('stloc',
+                         var.node_ident.index)  # берет значение из верхушки стека и сохраняет его в локальную переменную
+            elif var.node_ident.scope == ScopeType.PARAM:
+                self.add('starg', var.node_ident.index)  # сохраняет значение в слот для аргумента
+            elif var.node_ident.scope in (ScopeType.GLOBAL, ScopeType.GLOBAL_LOCAL):
+                self.add(f'stsfld {MSIL_TYPE_NAMES[var.node_ident.type.base_type]} Program::_gv{var.node_ident.index}')
+
+    # if isinstance(node.value, AssignNode):
+        #     node.value.msil_gen(self)
 
     @visitor.when(BinOpNode)
     def msil_gen(self, node: BinOpNode) -> None:
         node.arg1.msil_gen(self)
         node.arg2.msil_gen(self)
         if node.op == BinOp.NEQUALS:
-            if node.arg1.node_type == TypeDesc.STR:
+            if node.arg1.node_type == TypeDesc.STR:  # возможно типы непрравильно разбираются
                 self.add('call bool [mscorlib]System.String::op_Inequality(string, string)')
             else:
                 self.add('ceq')
@@ -108,21 +128,24 @@ class MsilCodeGenerator(CodeGenerator):
                 self.add('ceq')
         elif node.op == BinOp.GT:
             if node.arg1.node_type == TypeDesc.STR:
-                self.add(f'call {MSIL_TYPE_NAMES[BaseType.INT]} class {RUNTIME_CLASS_NAME}::compare({MSIL_TYPE_NAMES[BaseType.STR]}, {MSIL_TYPE_NAMES[BaseType.STR]})')
+                self.add(
+                    f'call {MSIL_TYPE_NAMES[BaseType.INT]} class {RUNTIME_CLASS_NAME}::compare({MSIL_TYPE_NAMES[BaseType.STR]}, {MSIL_TYPE_NAMES[BaseType.STR]})')
                 self.add('ldc.i4.0')
                 self.add('cgt')
             else:
                 self.add('cgt')
         elif node.op == BinOp.LT:
             if node.arg1.node_type == TypeDesc.STR:
-                self.add(f'call {MSIL_TYPE_NAMES[BaseType.INT]} class {RUNTIME_CLASS_NAME}::compare({MSIL_TYPE_NAMES[BaseType.STR]}, {MSIL_TYPE_NAMES[BaseType.STR]})')
+                self.add(
+                    f'call {MSIL_TYPE_NAMES[BaseType.INT]} class {RUNTIME_CLASS_NAME}::compare({MSIL_TYPE_NAMES[BaseType.STR]}, {MSIL_TYPE_NAMES[BaseType.STR]})')
                 self.add('ldc.i4.0')
                 self.add('clt')
             else:
                 self.add('clt')
         elif node.op == BinOp.GE:
             if node.arg1.node_type == TypeDesc.STR:
-                self.add(f'call {MSIL_TYPE_NAMES[BaseType.INT]} class {RUNTIME_CLASS_NAME}::compare({MSIL_TYPE_NAMES[BaseType.STR]}, {MSIL_TYPE_NAMES[BaseType.STR]})')
+                self.add(
+                    f'call {MSIL_TYPE_NAMES[BaseType.INT]} class {RUNTIME_CLASS_NAME}::compare({MSIL_TYPE_NAMES[BaseType.STR]}, {MSIL_TYPE_NAMES[BaseType.STR]})')
                 self.add('ldc.i4', '-1')
                 self.add('cgt')
             else:
@@ -131,7 +154,8 @@ class MsilCodeGenerator(CodeGenerator):
                 self.add('ceq')
         elif node.op == BinOp.LE:
             if node.arg1.node_type == TypeDesc.STR:
-                self.add(f'call {MSIL_TYPE_NAMES[BaseType.INT]} class {RUNTIME_CLASS_NAME}::compare({MSIL_TYPE_NAMES[BaseType.STR]}, {MSIL_TYPE_NAMES[BaseType.STR]})')
+                self.add(
+                    f'call {MSIL_TYPE_NAMES[BaseType.INT]} class {RUNTIME_CLASS_NAME}::compare({MSIL_TYPE_NAMES[BaseType.STR]}, {MSIL_TYPE_NAMES[BaseType.STR]})')
                 self.add('ldc.i4.1')
                 self.add('clt')
             else:
@@ -140,7 +164,8 @@ class MsilCodeGenerator(CodeGenerator):
                 self.add('ceq')
         elif node.op == BinOp.ADD:
             if node.arg1.node_type == TypeDesc.STR:
-                self.add(f'call {MSIL_TYPE_NAMES[BaseType.STR]} class {RUNTIME_CLASS_NAME}::concat({MSIL_TYPE_NAMES[BaseType.STR]}, {MSIL_TYPE_NAMES[BaseType.STR]})')
+                self.add(
+                    f'call {MSIL_TYPE_NAMES[BaseType.STR]} class {RUNTIME_CLASS_NAME}::concat({MSIL_TYPE_NAMES[BaseType.STR]}, {MSIL_TYPE_NAMES[BaseType.STR]})')
             else:
                 self.add('add')
         elif node.op == BinOp.SUB:
@@ -238,32 +263,35 @@ class MsilCodeGenerator(CodeGenerator):
             params += f'{MSIL_TYPE_NAMES[p.node_ident.type.base_type]} {str(p.name.name)}'
             # params += f'{MSIL_TYPE_NAMES[p.node_type.base_type]} {str(p.name.name)}'
         # self.add(f'.method public static {MSIL_TYPE_NAMES[func.return_type.type.base_type]} {func.name}({params}) cil managed')
-        self.add(f'.method public static {MSIL_TYPE_NAMES[func.return_type.type.base_type]} {func.name.name}({params}) cil managed')
+        self.add(
+            f'.method public static {MSIL_TYPE_NAMES[func.return_type.type.base_type]} {func.name.name}({params}) cil managed')
         self.add('{')
 
+        # ищем объявление переменных в методе
         local_vars_decls = find_vars_decls(func)
         decl = '.locals init ('
         count = 0
         for node in local_vars_decls:
-            for var in node.vars:
-                if isinstance(var, AssignNode):
-                    var = var.var
-                if var.node_ident.scope in (ScopeType.LOCAL, ):
-                    if count > 0:
-                        decl += ', '
-                    decl += f'{MSIL_TYPE_NAMES[var.node_type.base_type]} _v{var.node_ident.index}'
-                    count += 1
+            # if isinstance(node, AssignNode):
+            #     node = node.var
+            if node.value is not None:
+                node = node.value
+            if node.node_ident.scope in (ScopeType.LOCAL,):
+                if count > 0:
+                    decl += ', '
+                decl += f'{MSIL_TYPE_NAMES[node.node_type.base_type]} _v{node.node_ident.index}'
+                count += 1
         decl += ')'
         if count > 0:
             self.add(decl)
 
-        func.body.msil_gen(self)
+        func.body.msil_gen(self)  # разбираем тело
 
         # при необходимости добавим ret
         if not (isinstance(func.body, ReturnNode) or
-                len(func.body.childs) > 0 and isinstance(func.body.childs[-1], ReturnNode)):
-            if func.type.type.base_type != BaseType.VOID:
-                self.push_const(func.type.type.base_type, DEFAULT_TYPE_VALUES[func.type.type.base_type])
+                len(func.body.childs) > 0 and isinstance(func.body.childs[-2], ReturnNode)):
+            if func.return_type.type.base_type != BaseType.VOID:
+                self.push_const(func.return_type.type.base_type, DEFAULT_TYPE_VALUES[func.return_type.type.base_type])
             self.add('ret')
 
         self.add('}')
@@ -280,7 +308,8 @@ class MsilCodeGenerator(CodeGenerator):
             if isinstance(node, AssignNode):
                 node = node.var
             if node.name.node_ident.scope in (ScopeType.GLOBAL, ScopeType.GLOBAL_LOCAL):
-                self.add(f'.field public static {MSIL_TYPE_NAMES[node.name.node_ident.type.base_type]} _gv{node.name.node_ident.index}')
+                self.add(
+                    f'.field public static {MSIL_TYPE_NAMES[node.name.node_ident.type.base_type]} _gv{node.name.node_ident.index}')
         for stmt in prog.stmts:
             if isinstance(stmt, FunDeclNode):
                 self.msil_gen(stmt)

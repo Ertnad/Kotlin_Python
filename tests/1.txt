@@ -1,0 +1,2 @@
+val a: Int = 1;
+var b: Int = 1;

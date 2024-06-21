@@ -1,4 +1,3 @@
-from contextlib import suppress
 import inspect
 
 import pyparsing as pp
