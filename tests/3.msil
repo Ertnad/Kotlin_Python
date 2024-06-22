@@ -1,0 +1,44 @@
+.assembly program
+{
+}
+.class public Program
+{
+  .field public static int32 _gv0
+  .field public static int32 _gv1
+  
+  .method public static void Main()
+  {
+    .entrypoint
+    ldc.i4 2
+    stsfld int32 Program::_gv0
+    ldsfld int32 Program::_gv0
+    ldc.i4 2
+    ceq
+    brfalse L_2
+    ldc.i4 1
+    ldc.i4 2
+    add
+    call string class CompilerDemo.Runtime::convert(int32)
+    call void class CompilerDemo.Runtime::print(string)
+    ldc.i4 0
+    call string class CompilerDemo.Runtime::convert(int32)
+    call void class CompilerDemo.Runtime::print(string)
+    ldsfld int32 Program::_gv0
+    stsfld int32 Program::_gv1
+    ldsfld int32 Program::_gv1
+    ldc.i4 0
+    ceq
+    brfalse L_0
+    ldc.i4 1
+    stsfld int32 Program::_gv1
+    br L_1
+  L_0:
+    ldc.i4 0
+    stsfld int32 Program::_gv1
+  L_1:
+    br L_3
+  L_2:
+  L_3:
+    ret
+  }
+}

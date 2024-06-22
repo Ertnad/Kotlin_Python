@@ -1,0 +1,18 @@
+.assembly program
+{
+}
+.class public Program
+{
+  .field public static int32 _gv0
+  .field public static int32 _gv1
+  
+  .method public static void Main()
+  {
+    .entrypoint
+    ldc.i4 1
+    stsfld int32 Program::_gv0
+    ldc.i4 1
+    stsfld int32 Program::_gv1
+    ret
+  }
+}

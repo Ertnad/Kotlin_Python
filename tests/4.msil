@@ -1,0 +1,24 @@
+.assembly program
+{
+}
+.class public Program
+{
+  .field public static int32 _gv0
+  .method public static void printInteger(int32 name) cil managed
+  {
+    ldarg 0
+    call string class CompilerDemo.Runtime::convert(int32)
+    call void class CompilerDemo.Runtime::print(string)
+    ret
+  }
+  
+  .method public static void Main()
+  {
+    .entrypoint
+    ldc.i4 5
+    stsfld int32 Program::_gv0
+    ldsfld int32 Program::_gv0
+    call void class Program::printInteger(int32)
+    ret
+  }
+}

@@ -1,0 +1,7 @@
+fun printInteger(name: Int) {
+    print(name);
+}
+
+var value: Int = 5;
+
+printInteger(value);

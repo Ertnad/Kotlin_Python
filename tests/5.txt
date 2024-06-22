@@ -1,0 +1,9 @@
+var a: Int = 10;
+val b: Int = 20;
+when(a){
+    (a < 40)->{
+        print(a)
+        a = 2
+    }
+    in 40..50->print(b)
+}
