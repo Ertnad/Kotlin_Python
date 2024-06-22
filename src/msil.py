@@ -114,11 +114,11 @@ class MsilCodeGenerator(CodeGenerator):
     def msil_gen(self, node: BinOpNode) -> None:
         node.arg1.msil_gen(self)
         node.arg2.msil_gen(self)
-        if node.op == BinOp.NEQUALS:
+        if node.op == BinOp.NEQUALS:  # здесь везде self.add('ldc.i4.0') - это сравнение результата BinOp с нулём
             if node.arg1.node_type == TypeDesc.STR:  # возможно типы непрравильно разбираются
                 self.add('call bool [mscorlib]System.String::op_Inequality(string, string)')
             else:
-                self.add('ceq')
+                self.add('ceq')  # сравнивает два значения, если они равны, возвращает 1, иначе возвращает 0
                 self.add('ldc.i4.0')
                 self.add('ceq')
         if node.op == BinOp.EQUALS:
@@ -131,7 +131,7 @@ class MsilCodeGenerator(CodeGenerator):
                 self.add(
                     f'call {MSIL_TYPE_NAMES[BaseType.INT]} class {RUNTIME_CLASS_NAME}::compare({MSIL_TYPE_NAMES[BaseType.STR]}, {MSIL_TYPE_NAMES[BaseType.STR]})')
                 self.add('ldc.i4.0')
-                self.add('cgt')
+                self.add('cgt')  # сравнивает два значения, если первое значение больше второго, возвращает 1, иначе возвращает 0
             else:
                 self.add('cgt')
         elif node.op == BinOp.LT:
@@ -149,7 +149,7 @@ class MsilCodeGenerator(CodeGenerator):
                 self.add('ldc.i4', '-1')
                 self.add('cgt')
             else:
-                self.add('clt')
+                self.add('clt')  # сравнивает два значения, если первое значение меньше второго, возвращает 1, иначе возвращает 0
                 self.add('ldc.i4.0')
                 self.add('ceq')
         elif node.op == BinOp.LE:
@@ -192,41 +192,41 @@ class MsilCodeGenerator(CodeGenerator):
         node.expr.msil_gen(self)
         # часто встречаемые варианты будет реализовывать в коде, а не через класс Runtime
         if node.node_type.base_type == BaseType.FLOAT and node.expr.node_type.base_type == BaseType.INT:
-            self.add('conv.r8')
-        elif node.node_type.base_type == BaseType.BOOL and node.expr.node_type.base_type == BaseType.INT:
+            self.add('conv.r8')  # конвертация целого в вещественное
+        elif node.node_type.base_type == BaseType.BOOL and node.expr.node_type.base_type == BaseType.INT:  # булевское в целое
             self.add('ldc.i4.0')
             self.add('ceq')
             self.add('ldc.i4.0')
             self.add('ceq')
-        else:
+        else:  # для всего остального вызываем метод convert
             cmd = f'call {MSIL_TYPE_NAMES[node.node_type.base_type]} class {RUNTIME_CLASS_NAME}::convert({MSIL_TYPE_NAMES[node.expr.node_type.base_type]})'
             self.add(cmd)
 
     @visitor.when(CallNode)
     def msil_gen(self, node: CallNode) -> None:
         for param in node.params:
-            param.msil_gen(self)
-        class_name = RUNTIME_CLASS_NAME if node.func.node_ident.built_in else PROGRAM_CLASS_NAME
-        param_types = ', '.join(MSIL_TYPE_NAMES[param.node_type.base_type] for param in node.params)
+            param.msil_gen(self)  # генерируем код для всех параметров
+        class_name = RUNTIME_CLASS_NAME if node.func.node_ident.built_in else PROGRAM_CLASS_NAME  # используем либо наш класс, либо RUNTIME_CLASS в зависимости от того, встроенная в языке эта функция или нет
+        param_types = ', '.join(MSIL_TYPE_NAMES[param.node_type.base_type] for param in node.params)  # перечисляем параметры функции
         cmd = f'call {MSIL_TYPE_NAMES[node.node_type.base_type]} class {class_name}::{node.func.name}({param_types})'
         self.add(cmd)
 
     @visitor.when(ReturnNode)
     def msil_gen(self, node: ReturnNode) -> None:
-        node.val.msil_gen(self)
+        node.val.msil_gen(self)  # генерируем значение, которое возвращаем
         self.add('ret')
 
     @visitor.when(IfNode)
     def msil_gen(self, node: IfNode) -> None:
-        else_label = CodeLabel()
-        end_label = CodeLabel()
-        node.cond.msil_gen(self)
-        self.add('brfalse', else_label)
-        node.then_stmt.msil_gen(self)
-        self.add('br', end_label)
-        self.add(else_label)
+        else_label = CodeLabel()  # генерируем метку else
+        end_label = CodeLabel()  # генерируем метку конца if
+        node.cond.msil_gen(self)  # генерируем условие
+        self.add('brfalse', else_label)  # прыжок на шаг else, если условие не выполнено
+        node.then_stmt.msil_gen(self)  # генерируем код then
+        self.add('br', end_label)  # генерируем безусловный прыжок на конец
+        self.add(else_label)  # если условие в if не выполнено, то прыгаем на else, если его нет, то потом сразу переходим на end
         if node.else_stmt:
-            node.else_stmt.msil_gen(self)
+            node.else_stmt.msil_gen(self)  #
         self.add(end_label)
 
     @visitor.when(WhileNode)
@@ -235,9 +235,8 @@ class MsilCodeGenerator(CodeGenerator):
         end_label = CodeLabel()
         self.add(start_label)
         node.cond.msil_gen(self)
-        end_label = CodeLabel()
         self.add('brfalse', end_label)
-        node.body.msil_gen(self)
+        node.then_stmt.msil_gen(self)
         self.add('br', start_label)
         self.add(end_label)
 
@@ -303,22 +302,22 @@ class MsilCodeGenerator(CodeGenerator):
 
     def gen_program(self, prog: StmtListNode):
         self.start()
-        global_vars_decls = find_vars_decls(prog)
+        global_vars_decls = find_vars_decls(prog)  # возвращает все узлы, в которых объявлены переменные
         for node in global_vars_decls:
-            if isinstance(node, AssignNode):
+            if isinstance(node, AssignNode):  # если присваивание значения
                 node = node.var
-            if node.name.node_ident.scope in (ScopeType.GLOBAL, ScopeType.GLOBAL_LOCAL):
+            if node.name.node_ident.scope in (ScopeType.GLOBAL, ScopeType.GLOBAL_LOCAL):  # если это глобальная переменная
                 self.add(
                     f'.field public static {MSIL_TYPE_NAMES[node.name.node_ident.type.base_type]} _gv{node.name.node_ident.index}')
         for stmt in prog.stmts:
-            if isinstance(stmt, FunDeclNode):
+            if isinstance(stmt, FunDeclNode):  # если функция
                 self.msil_gen(stmt)
         self.add('')
         self.add('.method public static void Main()')
         self.add('{')
-        self.add('.entrypoint')
+        self.add('.entrypoint')   # точка входа в программу
         for stmt in prog.childs:
-            if not isinstance(stmt, FunDeclNode):
+            if not isinstance(stmt, FunDeclNode):  # генерируем весь, который не функция
                 self.msil_gen(stmt)
 
         # т.к. "глобальный" код будет функцией, обязательно надо добавить ret
