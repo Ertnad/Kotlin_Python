@@ -3,7 +3,8 @@ from typing import List, Union, Any
 from src import visitor
 from src.semantic_base import BaseType, TypeDesc, ScopeType, BinOp
 from src.mel_ast import AstNode, LiteralNode, IdentNode, BinOpNode, TypeConvertNode, CallNode, \
-    VarDecl, AssignNode, ReturnNode, IfNode, ForNode, StmtListNode, WhileNode, FunDeclNode, IntNumNode, NumNode
+    VarDecl, AssignNode, ReturnNode, IfNode, ForNode, StmtListNode, WhileNode, FunDeclNode, IntNumNode, NumNode, \
+    WhenNode, WhenExprNode, InNode
 from src.code_gen_base import CodeLabel, CodeLine, CodeGenerator, find_vars_decls, DEFAULT_TYPE_VALUES
 
 RUNTIME_CLASS_NAME = 'CompilerDemo.Runtime'
@@ -229,6 +230,40 @@ class MsilCodeGenerator(CodeGenerator):
             node.else_stmt.msil_gen(self)  #
         self.add(end_label)
 
+    @visitor.when(InNode)
+    def msil_gen(self, node: InNode, arg: IntNumNode) -> None:
+        range_label = CodeLabel()
+        end_label = CodeLabel()
+        node.arg1.msil_gen(self)
+        node.arg2.msil_gen(self)
+        self.add('in', range_label)
+        BinOpNode(BinOp.LE, node.arg1, arg).msil_gen(self)
+        self.add(end_label)
+
+    @visitor.when(WhenNode)
+    def msil_gen(self, node: WhenNode) -> None:
+        else_label = CodeLabel()  # генерируем метку else
+        end_label = CodeLabel()  # генерируем метку конца if
+        node.cond.msil_gen(self)  # генерируем условие
+        when_label = [CodeLabel() for _ in node.when_expr]
+        for i in range(len(node.when_expr)):
+            self.add(when_label[i])
+            if isinstance(node.when_expr[i].cond, InNode):
+                pass
+                # node.when_expr[i].cond.msil_gen(self)
+            else:
+                node.when_expr[i].cond.msil_gen(self)  # проверка условия
+            if i == len(node.when_expr) - 2:
+                self.add('brfalse', when_label[i + 1])  # прыжок на следующий шаг, если условие не выполнено
+                node.when_expr[i].then_stmt.msil_gen(self)
+                self.add('br', end_label)  # генерируем безусловный прыжок на конец
+            else:
+                self.add('brfalse', else_label)  # прыжок на шаг else, если условие не выполнено
+        self.add(else_label)  # если условие в if не выполнено, то прыгаем на else, если его нет, то потом сразу переходим на end
+        if node.else_stmt:
+            node.else_stmt.msil_gen(self)
+        self.add(end_label)
+
     @visitor.when(WhileNode)
     def msil_gen(self, node: WhileNode) -> None:
         start_label = CodeLabel()
@@ -288,7 +323,7 @@ class MsilCodeGenerator(CodeGenerator):
 
         # при необходимости добавим ret
         if not (isinstance(func.body, ReturnNode) or
-                len(func.body.childs) > 0 and isinstance(func.body.childs[-2], ReturnNode)):
+                len(func.body.childs) > 1 and isinstance(func.body.childs[-2], ReturnNode)):
             if func.return_type.type.base_type != BaseType.VOID:
                 self.push_const(func.return_type.type.base_type, DEFAULT_TYPE_VALUES[func.return_type.type.base_type])
             self.add('ret')

@@ -7,36 +7,12 @@
 #
 #
 # def main():
-#     prog1 = '''
-#         val a : Int = 2
-#             if (a == 2) {
-#                 print(1 + 2);
-#                 print(0);
-#                 if (b) {
-#                     b = 1;
-#                 }
-#             } else if (b) {
-#                 print(4);
-#             } else if (c) {
-#                 c = b + c;
-#             } else {
-#                 print(c);
-#             }
-#         '''
 #     prog2 = """
 #         a = 5;
 #         b = !!a;
 #     """
 #     prog3 = """
-#         a = 10;
-#         b = 20;
-#         when{
-#             (a < 90)->{
-#                 print(a)
-#                 a = 2
-#             }
-#             in 40 ..10->print(b)
-#         }
+#
 #     """
 #     prog4 = """
 #             a = 10;
@@ -301,12 +277,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='Compiler demo program (msil)')
     parser.add_argument('src', type=str, help='source code file')
     parser.add_argument('--msil-only', default=False, action='store_true', help='print only msil code (no ast)')
+    parser.add_argument('--jbc-only', default=False, action='store_true', help='print only java byte code (no ast)')
     args = parser.parse_args()
 
     with open(args.src, mode='r', encoding="utf-8") as f:
         src = f.read()
 
-    program.execute(src, args.msil_only, file_name=args.src)
+    program.execute(src, args.msil_only, args.jbc_only, file_name=args.src)
 
 
 if __name__ == "__main__":

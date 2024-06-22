@@ -31,6 +31,7 @@ def _make_parser():
     CONTINUE = pp.Keyword('continue').suppress()
     BREAK = pp.Keyword('break').suppress()
     RETURN = pp.Keyword('return').suppress()
+    TRUE, FALSE = pp.Keyword('true').suppress(), pp.Keyword('false').suppress()
 
     VAL = pp.Keyword('val')
     VAR = pp.Keyword("var")

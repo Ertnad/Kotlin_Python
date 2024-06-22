@@ -3,7 +3,7 @@ from typing import List, Optional
 from src import visitor
 from src.mel_ast import ExprNode, AstNode, IdentNode, BinOpNode, CallNode, AssignNode, ReturnNode, IfNode, WhileNode, \
     ForNode, StmtListNode, EMPTY_IDENT, EMPTY_STMT, LiteralNode, TypeNode, TypeConvertNode, FunDeclNode, \
-    FunParamNode, VarDecl, NumNode, IntNumNode, WhenNode, WhenExprNode, UnOpNode, InNode
+    FunParamNode, VarDecl, NumNode, IntNumNode, WhenNode, WhenExprNode, UnOpNode, InNode, InExprNode
 from src.semantic_base import TypeDesc, TYPE_CONVERTIBILITY, IdentScope, BIN_OP_TYPE_COMPATIBILITY, IdentDesc, \
     SemanticException, ScopeType, UN_OP_TYPE_COMPATIBILITY, IN_OP_TYPE_COMPATIBILITY
 
@@ -15,11 +15,6 @@ BUILT_IN_OBJECTS = '''
     fun toInt(p0 : String) { }
     fun toFloat(p0 : String) { }
 '''
-
-
-# BUILT_IN_OBJECTS = '''
-#     val d: Int = 4
-# '''
 
 
 def type_convert(expr: ExprNode, type_: TypeDesc, except_node: Optional[AstNode] = None,
@@ -169,6 +164,11 @@ class SemanticChecker:
         node.semantic_error("Оператор {} не применим к типам ({}, {})".format(
             node.op, node.arg1.node_type, node.arg2.node_type
         ))
+
+    @visitor.when(InExprNode)
+    def semantic_check(self, node: InExprNode, scope: IdentScope):
+        node.arg.semantic_check(self, scope)
+        node.inNode.semantic_check(self, scope)
 
     @visitor.when(UnOpNode)
     def semantic_check(self, node: UnOpNode, scope: IdentScope):

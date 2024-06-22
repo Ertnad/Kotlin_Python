@@ -3,7 +3,9 @@ if (a == 2) {
     print(1 + 2);
     print(0);
     val b: Int = a;
-    if (b) {
+    if (b == 0) {
         b = 1;
+    } else {
+        b = 0;
     }
 }

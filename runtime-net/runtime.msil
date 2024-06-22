@@ -11,13 +11,13 @@
   .ver 4:0:0:0
 }
 .module runtime.netmodule
-// MVID: {E93C56C6-DF7D-416E-93A3-53FC40725CD4}
+// MVID: {6E1E6237-2723-4370-9523-464901DE0C93}
 .imagebase 0x10000000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01170000
+// Image base: 0x026E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -75,7 +75,7 @@
     IL_0008:  ret
   } // end of method Runtime::println
 
-  .method public hidebysig static int32  to_int(string p0) cil managed
+  .method public hidebysig static int32  toInt(string p0) cil managed
   {
     // Code size       12 (0xc)
     .maxstack  1
@@ -88,10 +88,10 @@
 
     IL_000a:  ldloc.0
     IL_000b:  ret
-  } // end of method Runtime::to_int
+  } // end of method Runtime::toInt
 
   .method public hidebysig static float64 
-          to_float(string p0) cil managed
+          toFloat(string p0) cil managed
   {
     // Code size       12 (0xc)
     .maxstack  1
@@ -104,7 +104,7 @@
 
     IL_000a:  ldloc.0
     IL_000b:  ret
-  } // end of method Runtime::to_float
+  } // end of method Runtime::toFloat
 
   .method public hidebysig static string 
           convert(int32 v) cil managed

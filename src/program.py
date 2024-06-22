@@ -2,12 +2,12 @@ import sys
 import traceback
 import os
 
-from src import semantic_base, mel_parser
+from src import semantic_base, mel_parser, jbc
 from src import semantic_checker
 from src import msil
 
 
-def execute(prog: str, msil_only: bool = False, file_name: str = None) -> None:
+def execute(prog: str, msil_only: bool = False, jbc_only: bool = False, file_name: str = None) -> None:
     try:
         prog = mel_parser.parse(prog)
     except Exception as e:
@@ -26,15 +26,15 @@ def execute(prog: str, msil_only: bool = False, file_name: str = None) -> None:
         checker = semantic_checker.SemanticChecker()
         scope = semantic_checker.prepare_global_scope()
         checker.semantic_check(prog, scope)
-        if not msil_only:
+        if not (msil_only or jbc_only):
             print(*prog.tree, sep=os.linesep)
             print()
     except semantic_base.SemanticException as e:
         print('Ошибка: {}'.format(e.message), file=sys.stderr)
         exit(2)
 
-    print()
-    print('msil:')
+    if not msil_only:
+        print('msil:')
     try:
         gen = msil.MsilCodeGenerator()
         gen.gen_program(prog)
@@ -42,3 +42,14 @@ def execute(prog: str, msil_only: bool = False, file_name: str = None) -> None:
     except msil.MsilException or Exception as e:
         print('Ошибка: {}'.format(e.message), file=sys.stderr)
         exit(3)
+
+    if jbc_only:
+        print()
+        print('jbc:')
+        try:
+            gen = jbc.JbcCodeGenerator(file_name)
+            gen.gen_program(prog)
+            print(*gen.code, sep=os.linesep)
+        except jbc.JbcException or Exception as e:
+            print('Ошибка: {}'.format(e.message), file=sys.stderr)
+            exit(4)

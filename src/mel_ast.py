@@ -402,6 +402,27 @@ class InNode(ExprNode):
         return 'in' + (' : ' + r if r else '')
 
 
+class InExprNode(ExprNode):
+    def __init__(self, arg: IntNumNode, inNode: InNode,
+                 row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
+        super().__init__(row=row, col=col, **props)
+        self.op = InOp.IN
+        self.arg = arg
+        self.inNode = inNode
+
+    @property
+    def childs(self) -> Tuple[IntNumNode, InNode]:
+        return self.arg, self.inNode
+
+    def __str__(self) -> str:
+        r = ''
+        if self.node_ident:
+            r = str(self.node_ident)
+        elif self.node_type:
+            r = str(self.node_type)
+        return 'in' + (' : ' + r if r else '')
+
+
 class WhenExprNode(StmtNode):
     def __init__(self, cond: ExprNode, then_stmt: StmtNode,
                  row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
