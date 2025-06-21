@@ -1,0 +1,56 @@
+.assembly program
+{
+}
+.class public Program
+{
+  .field public static int32 _gv0
+  .method public static void printFibonacci(int32 count) cil managed
+  {
+    .locals init (int32 _v0, int32 _v1, int32 _v2, int32 _v3)
+    ldc.i4 0
+    stloc 0
+    ldloc 0
+    call string class CompilerDemo.Runtime::convert(int32)
+    call void class CompilerDemo.Runtime::println(string)
+    ldc.i4 1
+    stloc 1
+    ldloc 1
+    call string class CompilerDemo.Runtime::convert(int32)
+    call void class CompilerDemo.Runtime::println(string)
+    ldc.i4 2
+    stloc 2
+  L_0:
+    ldloc 2
+    ldarg 0
+    clt
+    brfalse L_1
+    ldloc 0
+    ldloc 1
+    add
+    stloc 3
+    ldloc 1
+    stloc 0
+    ldloc 3
+    stloc 1
+    ldloc 3
+    call string class CompilerDemo.Runtime::convert(int32)
+    call void class CompilerDemo.Runtime::println(string)
+    ldloc 2
+    ldc.i4 1
+    add
+    stloc 2
+    br L_0
+  L_1:
+    ret
+  }
+  
+  .method public static void Main()
+  {
+    .entrypoint
+    ldc.i4 20
+    stsfld int32 Program::_gv0
+    ldsfld int32 Program::_gv0
+    call void class Program::printFibonacci(int32)
+    ret
+  }
+}

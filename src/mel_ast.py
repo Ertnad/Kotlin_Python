@@ -403,7 +403,7 @@ class InNode(ExprNode):
 
 
 class InExprNode(ExprNode):
-    def __init__(self, arg: IntNumNode, inNode: InNode,
+    def __init__(self, arg: ExprNode, inNode: InNode,
                  row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
         super().__init__(row=row, col=col, **props)
         self.op = InOp.IN
@@ -411,7 +411,7 @@ class InExprNode(ExprNode):
         self.inNode = inNode
 
     @property
-    def childs(self) -> Tuple[IntNumNode, InNode]:
+    def childs(self) -> Tuple[ExprNode, InNode]:
         return self.arg, self.inNode
 
     def __str__(self) -> str:

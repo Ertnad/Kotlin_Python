@@ -80,6 +80,8 @@ def _make_parser():
     when = pp.Forward()
     assign = ident + ASSIGN.suppress() + (expr | if_ | when)
 
+    in_ << IN + int_num + POINT + int_num
+
     if_ << ((IF + LPAR + expr + RPAR + stmt + pp.Optional(ELSE + stmt))
             | (IF + LPAR + expr + RPAR + (ident | expr) + ELSE + (ident | expr | stmt)))
 
@@ -92,8 +94,6 @@ def _make_parser():
     each_expr = pp.Forward()
     iter_expr = ident + IN + expr
     each_expr << (FOR + LPAR + iter_expr + RPAR + stmt)
-
-    in_ << IN + int_num + POINT + int_num
 
     when_expr = (expr | in_) + OPERATOR + (expr | stmt)
     when << (WHEN + pp.Optional(LPAR + expr + RPAR) + LBRACE + pp.OneOrMore(when_expr)

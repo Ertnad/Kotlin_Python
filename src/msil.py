@@ -1,10 +1,11 @@
+from types import NoneType
 from typing import List, Union, Any
 
 from src import visitor
 from src.semantic_base import BaseType, TypeDesc, ScopeType, BinOp
 from src.mel_ast import AstNode, LiteralNode, IdentNode, BinOpNode, TypeConvertNode, CallNode, \
     VarDecl, AssignNode, ReturnNode, IfNode, ForNode, StmtListNode, WhileNode, FunDeclNode, IntNumNode, NumNode, \
-    WhenNode, WhenExprNode, InNode
+    WhenNode, WhenExprNode, InNode, InExprNode
 from src.code_gen_base import CodeLabel, CodeLine, CodeGenerator, find_vars_decls, DEFAULT_TYPE_VALUES
 
 RUNTIME_CLASS_NAME = 'CompilerDemo.Runtime'
@@ -107,9 +108,6 @@ class MsilCodeGenerator(CodeGenerator):
                 self.add('starg', var.node_ident.index)  # сохраняет значение в слот для аргумента
             elif var.node_ident.scope in (ScopeType.GLOBAL, ScopeType.GLOBAL_LOCAL):
                 self.add(f'stsfld {MSIL_TYPE_NAMES[var.node_ident.type.base_type]} Program::_gv{var.node_ident.index}')
-
-    # if isinstance(node.value, AssignNode):
-        #     node.value.msil_gen(self)
 
     @visitor.when(BinOpNode)
     def msil_gen(self, node: BinOpNode) -> None:
@@ -231,14 +229,23 @@ class MsilCodeGenerator(CodeGenerator):
         self.add(end_label)
 
     @visitor.when(InNode)
-    def msil_gen(self, node: InNode, arg: IntNumNode) -> None:
-        range_label = CodeLabel()
-        end_label = CodeLabel()
+    def msil_gen(self, node: InNode) -> None:
+        # range_label = CodeLabel()
+        # end_label = CodeLabel()
         node.arg1.msil_gen(self)
         node.arg2.msil_gen(self)
-        self.add('in', range_label)
-        BinOpNode(BinOp.LE, node.arg1, arg).msil_gen(self)
-        self.add(end_label)
+        # self.add('in', range_label)
+        # self.add(end_label)
+
+    @visitor.when(InExprNode)
+    def msil_gen(self, node: InExprNode) -> None:
+        else_label = CodeLabel()  # генерируем метку else
+        node.inNode.msil_gen(self)
+        node.arg.msil_gen(self)
+        BinOpNode(BinOp.GE, node.arg, node.inNode.arg1).msil_gen(self)
+        self.add('brfalse', else_label)
+        BinOpNode(BinOp.LE, node.arg, node.inNode.arg2).msil_gen(self)
+        self.add('brfalse', else_label)
 
     @visitor.when(WhenNode)
     def msil_gen(self, node: WhenNode) -> None:
@@ -246,19 +253,22 @@ class MsilCodeGenerator(CodeGenerator):
         end_label = CodeLabel()  # генерируем метку конца if
         node.cond.msil_gen(self)  # генерируем условие
         when_label = [CodeLabel() for _ in node.when_expr]
-        for i in range(len(node.when_expr)):
+        i = 0
+        for expr in node.when_expr:
             self.add(when_label[i])
-            if isinstance(node.when_expr[i].cond, InNode):
-                pass
-                # node.when_expr[i].cond.msil_gen(self)
-            else:
-                node.when_expr[i].cond.msil_gen(self)  # проверка условия
-            if i == len(node.when_expr) - 2:
-                self.add('brfalse', when_label[i + 1])  # прыжок на следующий шаг, если условие не выполнено
-                node.when_expr[i].then_stmt.msil_gen(self)
-                self.add('br', end_label)  # генерируем безусловный прыжок на конец
-            else:
+            if not isinstance(expr, CallNode) and isinstance(expr.cond, InNode):
+                BinOpNode(BinOp.GE, node.cond, expr.cond.arg1).msil_gen(self)
+                self.add('brfalse', else_label)
+                BinOpNode(BinOp.LE, node.cond, expr.cond.arg2).msil_gen(self)
+                self.add('brfalse', else_label)
+            elif isinstance(expr, BinOpNode):
+                expr.cond.msil_gen(self)  # проверка условия
                 self.add('brfalse', else_label)  # прыжок на шаг else, если условие не выполнено
+            if i == len(when_label) - 2:
+                self.add('brfalse', when_label[i + 1])  # прыжок на следующий шаг, если условие не выполнено
+                expr.then_stmt.msil_gen(self)
+                self.add('br', end_label)  # генерируем безусловный прыжок на конец
+            i += 1
         self.add(else_label)  # если условие в if не выполнено, то прыгаем на else, если его нет, то потом сразу переходим на end
         if node.else_stmt:
             node.else_stmt.msil_gen(self)
@@ -295,8 +305,6 @@ class MsilCodeGenerator(CodeGenerator):
             if len(params) > 0:
                 params += ', '
             params += f'{MSIL_TYPE_NAMES[p.node_ident.type.base_type]} {str(p.name.name)}'
-            # params += f'{MSIL_TYPE_NAMES[p.node_type.base_type]} {str(p.name.name)}'
-        # self.add(f'.method public static {MSIL_TYPE_NAMES[func.return_type.type.base_type]} {func.name}({params}) cil managed')
         self.add(
             f'.method public static {MSIL_TYPE_NAMES[func.return_type.type.base_type]} {func.name.name}({params}) cil managed')
         self.add('{')
@@ -306,14 +314,17 @@ class MsilCodeGenerator(CodeGenerator):
         decl = '.locals init ('
         count = 0
         for node in local_vars_decls:
-            # if isinstance(node, AssignNode):
-            #     node = node.var
-            if node.value is not None:
+            if not isinstance(node.node_ident, NoneType) and node.value is not None:
                 node = node.value
-            if node.node_ident.scope in (ScopeType.LOCAL,):
+            if not isinstance(node.node_ident, NoneType) and node.node_ident.scope in (ScopeType.LOCAL,):
                 if count > 0:
                     decl += ', '
                 decl += f'{MSIL_TYPE_NAMES[node.node_type.base_type]} _v{node.node_ident.index}'
+                count += 1
+            elif node.name.node_ident.scope in (ScopeType.LOCAL,):
+                if count > 0:
+                    decl += ', '
+                decl += f'{MSIL_TYPE_NAMES[node.node_type.type.base_type]} _v{node.name.node_ident.index}'
                 count += 1
         decl += ')'
         if count > 0:
